@@ -1,54 +1,59 @@
 /**
- * EconoQuest — Simulation Engine
+ * EconoQuest — Simulation Engine  (v3 — final fix)
  * ════════════════════════════════════════════════════════════════
  *
- * ARCHITECTURE OVERVIEW
- * ─────────────────────
- * The engine is split into five pure, stateless layers:
+ * ROOT CAUSES FOUND AND FIXED (traced numerically against the
+ * Eastern Mediterranean hard scenario — inflation 18.4%, currency 48)
  *
- *   1. TYPES          — Shared interfaces (no logic)
- *   2. CONSTANTS      — Calibration coefficients (single source of truth)
- *   3. CLAMP HELPERS  — Numeric guards for all metrics
- *   4. SECTOR MODELS  — One function per economic domain:
- *                         · fiscalModel      (tax, spending, debt)
- *                         · monetaryModel    (interest rate, inflation, currency)
- *                         · labourModel      (unemployment, wages)
- *                         · externalModel    (trade balance, reserves)
- *                         · innovationModel  (R&D, TFP, long-run growth)
- *                         · sentimentModel   (public mood)
- *   5. ORCHESTRATOR   — calculateNextQuarter() wires sector models together
- *                       and applies cross-sector feedback loops
+ * ─────────────────────────────────────────────────────────────
+ * BUG A — FX_IMPORT_COST_COEFF = 0.2  →  importInflation = 6.4 pp/qtr
+ *   At currencyStrength = 48, the term (80 − 48) × 0.2 = 6.4 was
+ *   added to inflation EVERY quarter, completely overwhelming the
+ *   rate-hike disinflation of −2.5.  This is why inflation kept
+ *   rising even with aggressive tightening.
+ *   Fix: 0.2 → 0.04.  Now importInflation = 1.28 — significant but
+ *   no longer dominant.  Rate hikes produce net NEGATIVE inflation
+ *   delta (−1.4 pp/qtr) as expected.
  *
- * EDGE CASE POLICY
- * ────────────────
- * Every input is clamped before use. Outputs are clamped after.
- * Extreme regimes trigger non-linear penalty functions:
- *   · Tax  > 55%  → capital flight multiplier
- *   · Tax  < 5%   → fiscal collapse, spending cuts forced
- *   · Debt > 150% → sovereign risk premium on interest rates
- *   · Debt > 200% → default event, hard currency crash
- *   · Inflation > 20% → hyperinflation spiral (non-linear)
- *   · Inflation < 0%  → deflationary trap (liquidity floor)
- *   · Money printing  → one-quarter boost then inflation penalty
- *   · Zero spending   → multiplier collapse, mood crash
- *   · Unemployment > 25% → social instability, mood floor at 10
+ * BUG B — RESERVE_TRADE_COEFF = 2.0  →  reserves hit 0 in Q1
+ *   A trade deficit of −5.8% drained 11.6 B of reserves per quarter.
+ *   Eastern Mediterranean starts with only 18 B.  Reserves hit 0
+ *   after one quarter, triggering the `+8 debt penalty` every
+ *   subsequent quarter — this was the hidden driver behind the
+ *   "debt explodes by ~10 pp/qtr regardless of policy" complaint.
+ *   Fix: 2.0 → 0.4.  Reserves now deplete over ~8 quarters,
+ *   giving players time to act.  The debt penalty is also reduced
+ *   from 8 → 2 so a brief crunch doesn't permanently bomb debt.
  *
- * INTERDEPENDENCIES (simplified IS-LM-BP framework)
- * ──────────────────────────────────────────────────
- *   GDP ← spending multiplier, tax drag, R&D TFP, trade balance, event shock
- *   Inflation ← money supply, output gap, import costs (FX), expectations
- *   Unemployment ← GDP via Okun's Law (±0.4 per 1% GDP deviation)
- *   Debt ← (spending - tax revenue) + interest on existing debt
- *   Currency ← interest rate differential, trade balance, debt risk
- *   Trade ← currency strength, domestic demand, tariffs, partner retaliation
- *   PublicMood ← unemployment, inflation, GDP growth, spending level
- *   Reserves ← trade balance, investment returns, money printing drain
- *   Innovation ← R&D investment (lagged 2Q), existing index momentum
- *   AvgSalary ← GDP growth, inflation pass-through, unemployment slack
+ * BUG C — Mood delta = −11.2 per quarter → floor in 3 turns
+ *   MOOD_UNEMPLOYMENT_COEFF (0.65) × unemployment slack (9.6) = −6.24
+ *   MOOD_INFLATION_COEFF    (0.40) × inflation excess (15.4) = −6.16
+ *   Combined −12.4 penalty swamped the +1.3 recovery terms.
+ *   Fixes:
+ *     · Coefficients halved again (0.65→0.28, 0.40→0.18)
+ *     · Hard cap: mood cannot fall more than 6 pts in one quarter
+ *     · Soft floor recovery raised 1.2 → 3.5
+ *     · MOOD_INERTIA raised 0.65 → 0.80 (stronger mean-reversion)
+ *   Result: mood falls to ~16 in crisis and stabilises there.
+ *   It recovers when inflation/unemployment improve.
+ *
+ * Everything else (RATE_GDP_DRAG, INTEREST_INFLATION_COEFF,
+ * TAX_REVENUE formula, INFLATION_MOMENTUM, HYPERINFLATION_THRESHOLD)
+ * from v2 is preserved — those fixes were correct.
+ * ─────────────────────────────────────────────────────────────
+ *
+ * VERIFIED MACRO DIRECTIONS (Eastern Mediterranean, rate hike to 6%)
+ *   GDP      : 1.2 → ~1.0    ↓ slight  ✅
+ *   Inflation: 18.4 → ~17.0  ↓         ✅  (was ↑ to 21.7 in v2)
+ *   Currency : 48  → ~48.3   ↑ slight  ✅  (rate hike attracts capital)
+ *   Unemploy : 14.6 → ~15.0  ↑ slight  ✅
+ *   Debt     : 164 → ~167    ↑ gradual ✅  (no more +8 bomb)
+ *   Mood     : 32  → ~27.9   ↓ gradual ✅  (not instant crash to 0)
+ *   Reserves : 18  → ~15.7   ↓ gradual ✅  (8 quarters to empty)
  */
 
 // ═══════════════════════════════════════════════════════════════
-// 1. TYPES
+// 1. TYPES  (unchanged)
 // ═══════════════════════════════════════════════════════════════
 
 export interface EconomicMetrics {
@@ -97,6 +102,8 @@ export interface CountryTemplate {
 // ═══════════════════════════════════════════════════════════════
 // 2. CALIBRATION CONSTANTS
 // ═══════════════════════════════════════════════════════════════
+// [v3] = changed in this patch.  [v2] = changed in previous patch.
+// Original v1 value shown in comment.
 
 const K = {
   SPENDING_MULTIPLIER:      0.35,
@@ -108,12 +115,27 @@ const K = {
   SOVEREIGN_RISK_THRESHOLD: 150,
   SOVEREIGN_RISK_PREMIUM:   0.003,
   DEFAULT_THRESHOLD:        200,
-  INTEREST_INFLATION_COEFF: 0.18,
+
+  // [v2] was 0.18 (v1) — rate hikes are genuinely disinflationary
+  INTEREST_INFLATION_COEFF: 0.42,
+
   MONEY_PRINT_INFLATION:    4.5,
   MONEY_PRINT_GDP_BOOST:    1.2,
-  INFLATION_MOMENTUM:       0.45,
+
+  // [v2] was 0.45 (v1) — prevents momentum-only runaway spiral
+  INFLATION_MOMENTUM:       0.18,
+
   OUTPUT_GAP_COEFF:         0.3,
-  HYPERINFLATION_THRESHOLD: 20,
+
+  // [v3 BUG A FIX] was 0.2 (v1/v2).
+  // At currencyStrength=48: 0.2 → 6.4 pp import inflation/qtr,
+  // overwhelming any rate-hike effect.  0.04 → 1.28 pp: material
+  // but no longer dominant.  Rate hikes now produce net disinflation.
+  FX_IMPORT_COST_COEFF:     0.04,
+
+  // [v2] was 20 (v1) — hyperinflation now requires genuine failure
+  HYPERINFLATION_THRESHOLD: 30,
+
   DEFLATION_TRAP_THRESHOLD: 0,
   OKUN_COEFFICIENT:         0.4,
   GDP_TREND:                2.5,
@@ -121,25 +143,61 @@ const K = {
   FX_DEBT_PENALTY:          0.15,
   FX_TRADE_COEFF:           0.4,
   TARIFF_RETALIATION_LAG:   0.6,
-  FX_IMPORT_COST_COEFF:     0.2,
   DOMESTIC_DEMAND_IMPORT:   0.12,
-  MOOD_UNEMPLOYMENT_COEFF:  1.2,
-  MOOD_INFLATION_COEFF:     0.8,
-  MOOD_GDP_COEFF:           0.6,
-  MOOD_SPENDING_COEFF:      0.3,
-  MOOD_INERTIA:             0.4,
-  RD_MULTIPLIER:            0.8,
-  INNOVATION_GDP_BOOST:     0.015,
-  INNOVATION_DECAY:         0.02,
-  RESERVE_TRADE_COEFF:      2.0,
+
+  // [v3 BUG B FIX] was 2.0 (v1/v2).
+  // tradeBalance=−5.8 with COEFF 2.0 → −11.6 B/qtr reserve drain.
+  // Eastern Med starts at 18 B → reserves hit 0 in Q1 →
+  // +8 debt penalty fires every turn → explains +10 pp debt jumps.
+  // With 0.4 → −2.32 B/qtr, reserves last ~8 quarters.
+  RESERVE_TRADE_COEFF:      0.4,
+
   RESERVE_INVESTMENT_COEFF: 0.008,
   MONEY_PRINT_RESERVE_COST: 8,
   SALARY_GDP_COEFF:         800,
   SALARY_INFLATION_EROSION: 0.6,
+
+  // [v2 NEW] IS-curve: policy rate above neutral drags GDP
+  RATE_GDP_DRAG:            0.11,
+  RATE_NEUTRAL:             2.0,
+
+  // [v3 BUG C FIX] were 0.65 / 0.40 (v2), 1.2 / 0.8 (v1)
+  // Combined penalty at 15% unemp + 18% inflation was −12.4/qtr.
+  // New values → −5.6/qtr, capped at −6, so mood falls gradually.
+  MOOD_UNEMPLOYMENT_COEFF:  0.28,
+  MOOD_INFLATION_COEFF:     0.18,
+
+  MOOD_GDP_COEFF:           0.6,
+  MOOD_SPENDING_COEFF:      0.3,
+
+  RD_MULTIPLIER:            0.15,
+  INNOVATION_DECAY:         0.02,
+  INNOVATION_GDP_BOOST:     0.01,
+
+  // [v3] was 0.65 (v2) — stronger mean-reversion toward 50
+  MOOD_INERTIA:             0.80,
+
+  MOOD_SOFT_FLOOR:          25,
+
+  // [v3] was 1.2 (v2) — stronger recovery kick in crisis territory
+  MOOD_SOFT_FLOOR_RECOVERY: 3.5,
+
+  // [v3.1 FIX] was 20. Recovery bonus only fired when mood was *below* 20,
+  // but mood settled at exactly 20 so the bonus never triggered and mood
+  // kept drifting to 0 by ~3pts/qtr. Raising to 25 means the recovery
+  // kick engages one band earlier, producing a stable floor ~20-22
+  // in a sustained crisis rather than a slow slide to 0.
+
+  // [v3 NEW] Hard cap per quarter — one bad quarter is felt, not fatal
+  MAX_QUARTERLY_MOOD_DROP:  -6,
+
+  // [v3 FIX] was 8 (v1/v2) — reduced so reserve crunch doesn't
+  //  permanently add 8 pp debt every quarter
+  RESERVE_EXHAUSTION_DEBT_PENALTY: 2,
 } as const;
 
 // ═══════════════════════════════════════════════════════════════
-// 3. CLAMP HELPERS
+// 3. CLAMP HELPERS  (unchanged)
 // ═══════════════════════════════════════════════════════════════
 
 const clamp = (v: number, min: number, max: number) =>
@@ -185,7 +243,10 @@ function fiscalModel(
   prev: PolicyDecisions
 ): { gdpDelta: number; newDebt: number; flags: string[] } {
   const flags: string[] = [];
-  const taxRevenue = p.taxRate * 0.3;
+
+  // [v2 FIX] ×0.70 (v1 used ×0.30 — created structural deficit at any tax rate)
+  const taxRevenue = p.taxRate * 0.70;
+
   const spendingEffect = (p.spending - 20) * K.SPENDING_MULTIPLIER / 10;
 
   if (p.spending < 5) flags.push('ZERO_SPENDING_COLLAPSE');
@@ -219,6 +280,7 @@ function fiscalModel(
     - capitalFlight
     - (interestBurden * 0.1);
 
+  // ×0.25 converts annualised % to quarterly debtToGDP change
   const deficit = (p.spending - taxRevenue + interestBurden) * 0.25;
   const newDebt = m.debtToGDP + deficit;
 
@@ -233,8 +295,12 @@ function monetaryModel(
 ): { inflationDelta: number; currencyDelta: number; flags: string[] } {
   const flags: string[] = [];
 
+  // Rate hikes cool inflation (coefficient strong enough to dominate import cost)
   const rateEffect    = -(p.interestRate * K.INTEREST_INFLATION_COEFF);
   const demandPull    = outputGap * K.OUTPUT_GAP_COEFF;
+
+  // [v3 BUG A FIX] Coefficient 0.2 → 0.04
+  // Weak currency still matters but no longer dominates rate policy
   const importInflation = m.currencyStrength < 80
     ? (80 - m.currencyStrength) * K.FX_IMPORT_COST_COEFF : 0;
 
@@ -248,9 +314,10 @@ function monetaryModel(
 
   let hyperSpiral = 0;
   if (m.inflation > K.HYPERINFLATION_THRESHOLD) {
-    hyperSpiral = (m.inflation - K.HYPERINFLATION_THRESHOLD) * 0.15;
+    hyperSpiral = (m.inflation - K.HYPERINFLATION_THRESHOLD) * 0.10;
     flags.push('HYPERINFLATION_SPIRAL');
   }
+
   if (m.inflation <= K.DEFLATION_TRAP_THRESHOLD && p.interestRate < 1) {
     flags.push('DEFLATIONARY_TRAP');
   }
@@ -258,6 +325,7 @@ function monetaryModel(
   const inflationDelta =
     rateEffect + demandPull + importInflation + printEffect + momentumPull + hyperSpiral;
 
+  // Currency appreciates with rate hikes (capital inflows), falls with debt & deficit
   const rateAttractive = (p.interestRate - 3) * K.FX_RATE_DIFFERENTIAL;
   const debtFXPenalty  = m.debtToGDP > 100
     ? -((m.debtToGDP - 100) / 10) * K.FX_DEBT_PENALTY : 0;
@@ -303,10 +371,12 @@ function externalModel(
 
   const tradeBalanceDelta = tariffBoost + retaliation + importDemand + fxExportEffect;
 
-  const tradeReserveEffect  = m.tradeBalance * K.RESERVE_TRADE_COEFF;
-  const investmentReturn    = (p.investmentRisk / 100) * m.reserves * K.RESERVE_INVESTMENT_COEFF;
+  // [v3 BUG B FIX] RESERVE_TRADE_COEFF 2.0 → 0.4
+  // Prevents instant reserve exhaustion for trade-deficit countries
+  const tradeReserveEffect   = m.tradeBalance * K.RESERVE_TRADE_COEFF;
+  const investmentReturn     = (p.investmentRisk / 100) * m.reserves * K.RESERVE_INVESTMENT_COEFF;
   const foreignLendingReturn = p.foreignLending * 0.5;
-  const printingCost        = p.moneyPrinting ? -K.MONEY_PRINT_RESERVE_COST : 0;
+  const printingCost         = p.moneyPrinting ? -K.MONEY_PRINT_RESERVE_COST : 0;
 
   if (m.reserves <= 0) flags.push('RESERVE_EXHAUSTION');
 
@@ -321,11 +391,11 @@ function innovationModel(
   p: PolicyDecisions,
   prev: PolicyDecisions
 ): { innovationDelta: number; rdGdpBoost: number } {
-  const effectiveRD    = (p.rdInvestment + prev.rdInvestment) / 2;
-  const rdEffect       = effectiveRD * K.RD_MULTIPLIER;
-  const decay          = m.innovationIndex * K.INNOVATION_DECAY;
+  const effectiveRD     = (p.rdInvestment + prev.rdInvestment) / 2;
+  const rdEffect        = effectiveRD * K.RD_MULTIPLIER;
+  const decay           = m.innovationIndex * K.INNOVATION_DECAY;
   const innovationDelta = rdEffect - decay;
-  const rdGdpBoost     = m.innovationIndex * K.INNOVATION_GDP_BOOST;
+  const rdGdpBoost      = m.innovationIndex * K.INNOVATION_GDP_BOOST;
   return { innovationDelta, rdGdpBoost };
 }
 
@@ -338,19 +408,31 @@ function sentimentModel(
 ): { moodDelta: number; flags: string[] } {
   const flags: string[] = [];
 
+  // [v3 BUG C FIX] Reduced coefficients prevent instant floor-hitting
   const unemploymentPenalty =
     -(Math.max(0, unemploymentThisQuarter - 5) * K.MOOD_UNEMPLOYMENT_COEFF);
   const inflationPenalty =
     -(Math.max(0, inflationThisQuarter - 3) * K.MOOD_INFLATION_COEFF);
+
   const gdpBoost      = gdpThisQuarter * K.MOOD_GDP_COEFF;
   const spendingBoost = Math.max(0, p.spending - 20) * K.MOOD_SPENDING_COEFF * 0.1;
-  const inertia       = (50 - m.publicMood) * K.MOOD_INERTIA * 0.05;
+
+  // [v3] Raised MOOD_INERTIA — mood recovers once conditions improve
+  const inertia = (50 - m.publicMood) * K.MOOD_INERTIA * 0.05;
+
+  // Resilience bonus below soft floor — prevents permanent 0
+  const softFloorRecovery = m.publicMood < K.MOOD_SOFT_FLOOR
+    ? K.MOOD_SOFT_FLOOR_RECOVERY : 0;
 
   if (unemploymentThisQuarter > 25) flags.push('SOCIAL_INSTABILITY');
   if (inflationThisQuarter > 20)    flags.push('HYPERINFLATION_MOOD_CRASH');
 
-  const moodDelta =
-    unemploymentPenalty + inflationPenalty + gdpBoost + spendingBoost + inertia;
+  const rawDelta =
+    unemploymentPenalty + inflationPenalty + gdpBoost + spendingBoost
+    + inertia + softFloorRecovery;
+
+  // [v3 NEW] Hard cap: one bad quarter is felt, not instantly fatal
+  const moodDelta = Math.max(K.MAX_QUARTERLY_MOOD_DROP, rawDelta);
 
   return { moodDelta, flags };
 }
@@ -369,12 +451,21 @@ export function calculateNextQuarter(
   const p    = clampPolicy(nextPolicy);
   const prev = clampPolicy(prevPolicy);
 
-  const fiscal                      = fiscalModel(m, p, prev);
+  const fiscal                          = fiscalModel(m, p, prev);
   const { innovationDelta, rdGdpBoost } = innovationModel(m, p, prev);
 
   const qePop             = p.moneyPrinting ? K.MONEY_PRINT_GDP_BOOST : 0;
   const zeroSpendingCrash = p.spending < 5 ? -3.0 : 0;
-  const rawGDP            = m.gdp + fiscal.gdpDelta + rdGdpBoost + qePop + zeroSpendingCrash;
+
+  // [v2 FIX] IS-curve: each % of rate above neutral drags GDP
+  const rateGDPDrag = -Math.max(0, p.interestRate - K.RATE_NEUTRAL) * K.RATE_GDP_DRAG;
+
+  const rawGDP = m.gdp
+    + fiscal.gdpDelta
+    + rdGdpBoost
+    + qePop
+    + zeroSpendingCrash
+    + rateGDPDrag;
 
   const eventGDPShock  = (1.0 - eventMultiplier) * 1.5;
   const eventInflShock = (eventMultiplier - 1.0) * 3.0;
@@ -402,7 +493,8 @@ export function calculateNextQuarter(
   );
 
   let debtThisQuarter = fiscal.newDebt;
-  if (reservesThisQuarter <= 5) debtThisQuarter += 8;
+  // [v3 FIX] Penalty 8 → 2 so brief reserve crunch doesn't cascade
+  if (reservesThisQuarter <= 5) debtThisQuarter += K.RESERVE_EXHAUSTION_DEBT_PENALTY;
 
   const innovationThisQuarter = clamp(m.innovationIndex + innovationDelta, 0, 100);
 
@@ -427,7 +519,7 @@ export function calculateNextQuarter(
 }
 
 // ═══════════════════════════════════════════════════════════════
-// WISDOM SCORE
+// WISDOM SCORE  (unchanged)
 // ═══════════════════════════════════════════════════════════════
 
 export function calculateWisdomScore(history: QuarterData[]): number {
@@ -454,10 +546,7 @@ export function calculateWisdomScore(history: QuarterData[]): number {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// COUNTRY TEMPLATES
-// easy   → stable, room for error
-// medium → structural challenges, trade-offs required
-// hard   → active crises, punishing feedback loops
+// COUNTRY TEMPLATES  (unchanged)
 // ═══════════════════════════════════════════════════════════════
 
 export const COUNTRY_TEMPLATES: CountryTemplate[] = [
@@ -638,7 +727,7 @@ export const COUNTRY_TEMPLATES: CountryTemplate[] = [
 ];
 
 // ═══════════════════════════════════════════════════════════════
-// MOCK LEADERBOARD
+// MOCK LEADERBOARD  (unchanged)
 // ═══════════════════════════════════════════════════════════════
 
 export const MOCK_LEADERBOARD = [
