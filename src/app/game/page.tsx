@@ -1,22 +1,3 @@
-/**
- * src/app/game/page.tsx
- * ──────────────────────
- * Route: /game
- *
- * Orchestrates the simulation session.
- * Reads the chosen country from sessionStorage (set by /setup).
- * Delegates ALL rendering to focused panel components —
- * this file only manages state and wires panels together.
- *
- * Panel components (each in src/components/game/panels/):
- *   GameHeader      — country name, quarter badge, exit/new-game buttons
- *   EventBar        — current global event display
- *   FlagsBar        — live edge-case warnings
- *   PolicyPanel     — left column: policy levers + advisor
- *   MetricsPanel    — right column: metric grid + chart + mandate bar
- *   LeaderboardPanel — hall of fame tab content
- *   GameOverModal   — end-of-simulation overlay
- */
 'use client';
 
 import React, { useState, useEffect } from 'react';
