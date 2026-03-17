@@ -2,58 +2,78 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Award, Trophy, Medal, User } from 'lucide-react';
 import { MOCK_LEADERBOARD } from '@/lib/simulation-engine';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
+
+const css = `
+  .lb-root{font-family:'DM Mono','Courier New',monospace;color:#1c1409}
+  .lb-head{display:grid;grid-template-columns:32px 1fr auto auto;gap:0;border-bottom:2px solid rgba(28,20,9,.22);padding:0 20px 12px;align-items:end}
+  .lb-col-label{font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:rgba(28,20,9,.4)}
+  .lb-list{display:flex;flex-direction:column}
+  .lb-row{display:grid;grid-template-columns:32px 1fr auto;gap:12px;padding:14px 20px;border-bottom:1px solid rgba(28,20,9,.08);align-items:center;transition:background .12s;cursor:default}
+  .lb-row:hover{background:#e9e0d2}
+  .lb-row.top1{border-left:3px solid #bf3509}
+  .lb-row.top2{border-left:3px solid rgba(28,20,9,.35)}
+  .lb-row.top3{border-left:3px solid rgba(28,20,9,.2)}
+  .lb-rank{font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;color:rgba(28,20,9,.25);text-align:center}
+  .lb-rank.top1{color:#bf3509}
+  .lb-rank.top2{color:#1c1409}
+  .lb-rank.top3{color:rgba(28,20,9,.55)}
+  .lb-info{}
+  .lb-name{font-size:13px;font-weight:500;color:#1c1409;letter-spacing:.02em;margin-bottom:3px}
+  .lb-badge{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:rgba(28,20,9,.4);border:1px solid rgba(28,20,9,.15);padding:1px 6px;display:inline-block}
+  .lb-score-col{text-align:right}
+  .lb-score{font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1;color:#1c1409;letter-spacing:.03em}
+  .lb-row.top1 .lb-score{color:#bf3509}
+  .lb-score-label{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:rgba(28,20,9,.35);margin-top:2px}
+  .lb-masthead{padding:24px 20px 20px;border-bottom:1px solid rgba(28,20,9,.13)}
+  .lb-masthead-title{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:.04em;color:#1c1409;margin-bottom:4px}
+  .lb-masthead-sub{font-size:10px;color:rgba(28,20,9,.45);letter-spacing:.06em}
+  .lb-empty{padding:40px 20px;text-align:center;font-size:11px;color:rgba(28,20,9,.35);letter-spacing:.06em}
+`;
 
 export const Leaderboard: React.FC = () => {
+  const entries = MOCK_LEADERBOARD ?? [];
+
   return (
-    <Card className="glass-morphism border-none h-full">
-      <CardHeader>
-        <CardTitle className="text-xl font-headline flex items-center gap-2">
-          <Trophy className="w-6 h-6 text-yellow-500" />
-          Hall of Fame
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <ScrollArea className="h-[400px]">
-          <div className="px-4 pb-4 space-y-2">
-            {MOCK_LEADERBOARD.map((user, index) => (
-              <motion.div
-                key={user.name}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-6 text-center font-headline font-bold text-muted-foreground">
-                    {index === 0 && <Medal className="w-5 h-5 text-yellow-500 mx-auto" />}
-                    {index === 1 && <Medal className="w-5 h-5 text-slate-400 mx-auto" />}
-                    {index === 2 && <Medal className="w-5 h-5 text-amber-600 mx-auto" />}
-                    {index > 2 && index + 1}
+    <>
+      <style>{css}</style>
+      <div className="lb-root">
+        <div className="lb-masthead">
+          <div className="lb-masthead-title">Hall of Fame</div>
+          <div className="lb-masthead-sub">Ranked by wisdom score across all completed mandates</div>
+        </div>
+
+        {entries.length === 0 ? (
+          <div className="lb-empty">No entries yet. Complete a simulation to appear here.</div>
+        ) : (
+          <div className="lb-list">
+            {entries.map((user: any, i: number) => {
+              const rankClass = i === 0 ? 'top1' : i === 1 ? 'top2' : i === 2 ? 'top3' : '';
+              return (
+                <motion.div
+                  key={user.name}
+                  className={`lb-row ${rankClass}`}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.04 }}
+                >
+                  <div className={`lb-rank ${rankClass}`}>
+                    {i === 0 ? '1' : i === 1 ? '2' : i === 2 ? '3' : i + 1}
                   </div>
-                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                    <User className="w-4 h-4" />
+                  <div className="lb-info">
+                    <div className="lb-name">{user.name}</div>
+                    <span className="lb-badge">{user.badge}</span>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold font-headline">{user.name}</p>
-                    <Badge variant="outline" className="text-[10px] py-0 border-white/10 text-muted-foreground">
-                      {user.badge}
-                    </Badge>
+                  <div className="lb-score-col">
+                    <div className="lb-score">{user.score}</div>
+                    <div className="lb-score-label">pts</div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold font-headline text-accent">{user.score}</p>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Points</p>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+        )}
+      </div>
+    </>
   );
 };

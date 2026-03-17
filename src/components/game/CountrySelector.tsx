@@ -2,12 +2,54 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Globe, Plus, Check, ChevronRight } from 'lucide-react';
 import { COUNTRY_TEMPLATES, CountryTemplate } from '@/lib/simulation-engine';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
+
+const css = `
+  .cs-root{font-family:'DM Mono','Courier New',monospace;color:#1c1409}
+  .cs-masthead{margin-bottom:40px;border-bottom:2px solid rgba(28,20,9,.22);padding-bottom:28px}
+  .cs-overtitle{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:rgba(28,20,9,.4);margin-bottom:8px}
+  .cs-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(48px,8vw,88px);line-height:.88;letter-spacing:.03em;color:#1c1409;margin-bottom:16px}
+  .cs-title .acc{color:#bf3509}
+  .cs-lead{font-size:13px;color:rgba(28,20,9,.55);line-height:1.75;max-width:480px}
+  .cs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(28,20,9,.13);margin-bottom:1px}
+  .cs-custom-row{background:rgba(28,20,9,.13);padding:1px}
+  .cs-card{background:#f2ebe0;padding:24px;cursor:pointer;transition:background .15s;border-top:2px solid transparent;position:relative}
+  .cs-card:hover{background:#e9e0d2}
+  .cs-card.selected{border-top-color:#bf3509;background:#e9e0d2}
+  .cs-card-num{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:rgba(28,20,9,.3);margin-bottom:14px}
+  .cs-card-name{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.04em;color:#1c1409;margin-bottom:4px}
+  .cs-card-desc{font-size:11px;color:rgba(28,20,9,.5);line-height:1.65;margin-bottom:16px;min-height:48px}
+  .cs-card-stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(28,20,9,.1);border-top:1px solid rgba(28,20,9,.1)}
+  .cs-stat{background:#f2ebe0;padding:10px 12px}
+  .cs-card.selected .cs-stat{background:#e9e0d2}
+  .cs-stat-label{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:rgba(28,20,9,.35);margin-bottom:3px}
+  .cs-stat-val{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#bf3509;line-height:1}
+  .cs-check{position:absolute;top:16px;right:16px;width:18px;height:18px;background:#bf3509;display:flex;align-items:center;justify-content:center}
+  .cs-check-mark{color:#fff;font-size:10px}
+  .cs-custom-card{background:#f2ebe0;padding:24px;cursor:pointer;transition:background .15s;border-top:2px solid transparent}
+  .cs-custom-card:hover{background:#e9e0d2}
+  .cs-custom-card.selected{border-top-color:#bf3509;background:#e9e0d2}
+  .cs-custom-inner{display:flex;align-items:center;gap:20px}
+  .cs-custom-plus{font-family:'Bebas Neue',sans-serif;font-size:32px;color:rgba(28,20,9,.25);line-height:1}
+  .cs-custom-text{}
+  .cs-custom-name{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:.04em;color:rgba(28,20,9,.5)}
+  .cs-custom-desc{font-size:11px;color:rgba(28,20,9,.35);margin-top:2px}
+  .cs-form{background:#e9e0d2;border-top:1px solid rgba(28,20,9,.13);padding:24px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+  .cs-form-group{flex:1;min-width:200px}
+  .cs-form-label{font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:rgba(28,20,9,.45);margin-bottom:8px;display:block}
+  .cs-form-input{width:100%;background:#f2ebe0;border:1px solid rgba(28,20,9,.22);padding:12px 14px;font-family:'DM Mono',monospace;font-size:14px;color:#1c1409;outline:none;transition:border-color .12s}
+  .cs-form-input:focus{border-color:#bf3509}
+  .cs-form-input::placeholder{color:rgba(28,20,9,.3)}
+  .cs-start-bar{margin-top:1px;background:#f2ebe0;border:1px solid rgba(28,20,9,.13);padding:20px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+  .cs-start-info{display:flex;flex-direction:column;gap:4px}
+  .cs-start-country{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.04em;color:#1c1409}
+  .cs-start-desc{font-size:10px;color:rgba(28,20,9,.45);letter-spacing:.05em}
+  .cs-start-btn{background:#bf3509;color:#fff;border:none;font-family:'DM Mono',monospace;font-size:13px;letter-spacing:.09em;text-transform:uppercase;padding:16px 40px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:.12s;white-space:nowrap}
+  .cs-start-btn:hover{background:#d94010}
+  .cs-start-btn:disabled{opacity:.4;cursor:not-allowed}
+  @media(max-width:720px){.cs-grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:480px){.cs-grid{grid-template-columns:1fr}}
+`;
 
 interface CountrySelectorProps {
   onSelect: (country: CountryTemplate) => void;
@@ -16,159 +58,142 @@ interface CountrySelectorProps {
 export const CountrySelector: React.FC<CountrySelectorProps> = ({ onSelect }) => {
   const [selected, setSelected] = useState<string | null>(null);
   const [isCustom, setIsCustom] = useState(false);
-  const [customName, setCustomName] = useState("");
+  const [customName, setCustomName] = useState('');
 
-  const handleCustomStart = () => {
-    if (!customName.trim()) return;
-    onSelect({
-      name: customName,
-      description: "A nation forged by your own design.",
-      metrics: {
-        inflation: 3.0,
-        unemployment: 5.0,
-        gdp: 2.5,
-        publicMood: 70,
-        avgSalary: 40000,
-        debtToGDP: 50,
-        currencyStrength: 100,
-        tradeBalance: 0,
-        innovationIndex: 50,
-        reserves: 100
-      }
-    });
+  const handleStart = () => {
+    if (isCustom) {
+      if (!customName.trim()) return;
+      onSelect({
+        name: customName.trim(),
+        description: 'A nation forged by your own design.',
+        metrics: {
+          inflation: 3.0, unemployment: 5.0, gdp: 2.5, publicMood: 70,
+          avgSalary: 40000, debtToGDP: 50, currencyStrength: 100,
+          tradeBalance: 0, innovationIndex: 50, reserves: 100
+        }
+      });
+    } else if (selected) {
+      onSelect(COUNTRY_TEMPLATES.find(t => t.name === selected)!);
+    }
   };
 
+  const canStart = isCustom ? customName.trim().length > 0 : selected !== null;
+  const selectedTemplate = selected ? COUNTRY_TEMPLATES.find(t => t.name === selected) : null;
+
   return (
-    <div className="max-w-4xl mx-auto space-y-8 py-12">
-      <div className="text-center space-y-4">
-        <motion.h2 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-5xl font-bold font-headline text-accent"
-        >
-          Build Your Nation
-        </motion.h2>
-        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-          Choose a pre-defined economic baseline or create your own custom country to begin the simulation.
-        </p>
-      </div>
+    <>
+      <style>{css}</style>
+      <div className="cs-root">
+        <div className="cs-masthead">
+          <div className="cs-overtitle">Mission Setup</div>
+          <h2 className="cs-title">
+            Choose Your<br /><span className="acc">Nation.</span>
+          </h2>
+          <p className="cs-lead">
+            Select an economic baseline or define your own. Every decision from this point forward is your responsibility.
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {COUNTRY_TEMPLATES.map((tpl, i) => (
-          <motion.div
-            key={tpl.name}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.1 }}
-          >
-            <Card 
-              className={cn(
-                "h-full cursor-pointer border-2 transition-all group overflow-hidden relative",
-                selected === tpl.name ? "border-accent bg-accent/5" : "border-white/10 bg-white/5 hover:border-white/30"
-              )}
-              onClick={() => {
-                setSelected(tpl.name);
-                setIsCustom(false);
-              }}
+        {/* Country grid */}
+        <div className="cs-grid">
+          {COUNTRY_TEMPLATES.map((tpl, i) => (
+            <motion.div
+              key={tpl.name}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.06 }}
             >
-              <CardContent className="p-6 space-y-4">
-                <div className="flex justify-between items-start">
-                  <div className="p-3 rounded-xl bg-primary/20 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                    <Globe className="w-6 h-6" />
-                  </div>
-                  {selected === tpl.name && <Check className="text-accent w-6 h-6" />}
+              <div
+                className={`cs-card${selected === tpl.name ? ' selected' : ''}`}
+                onClick={() => { setSelected(tpl.name); setIsCustom(false); }}
+              >
+                <div className="cs-card-num">{String(i + 1).padStart(2, '0')}</div>
+                <div className="cs-card-name">{tpl.name}</div>
+                <div className="cs-card-desc">{tpl.description}</div>
+                <div className="cs-card-stats">
+                  {[
+                    { label: 'GDP Growth', val: `${tpl.metrics.gdp}%` },
+                    { label: 'Debt / GDP', val: `${tpl.metrics.debtToGDP}%` },
+                    { label: 'Inflation',  val: `${tpl.metrics.inflation}%` },
+                    { label: 'Mood',       val: `${tpl.metrics.publicMood}/100` },
+                  ].map(s => (
+                    <div key={s.label} className="cs-stat">
+                      <div className="cs-stat-label">{s.label}</div>
+                      <div className="cs-stat-val">{s.val}</div>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold font-headline">{tpl.name}</h3>
-                  <p className="text-xs text-muted-foreground mt-1 h-12 overflow-hidden">{tpl.description}</p>
-                </div>
-                <div className="grid grid-cols-2 gap-2 pt-4 border-t border-white/10">
-                  <div className="text-center">
-                    <p className="text-[10px] text-muted-foreground uppercase">GDP</p>
-                    <p className="text-sm font-bold">{tpl.metrics.gdp}%</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-[10px] text-muted-foreground uppercase">Debt</p>
-                    <p className="text-sm font-bold">{tpl.metrics.debtToGDP}%</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card 
-            className={cn(
-              "h-full cursor-pointer border-2 border-dashed transition-all bg-white/5",
-              isCustom ? "border-accent bg-accent/5" : "border-white/10 hover:border-white/30"
-            )}
-            onClick={() => {
-              setIsCustom(true);
-              setSelected(null);
-            }}
-          >
-            <CardContent className="p-6 flex flex-col items-center justify-center h-full text-center space-y-4">
-              <div className="p-3 rounded-full bg-white/10">
-                <Plus className="w-8 h-8 text-muted-foreground" />
+                {selected === tpl.name && (
+                  <div className="cs-check"><span className="cs-check-mark">✓</span></div>
+                )}
               </div>
-              <div>
-                <h3 className="text-xl font-bold font-headline text-muted-foreground">Custom Nation</h3>
-                <p className="text-xs text-muted-foreground mt-1">Define your own destiny.</p>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
+            </motion.div>
+          ))}
+        </div>
 
-      <AnimatePresence mode="wait">
-        {isCustom ? (
-          <motion.div 
-            key="custom-form"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="bg-card border border-white/10 p-8 rounded-2xl flex flex-col md:flex-row gap-4 items-end overflow-hidden"
+        {/* Custom nation */}
+        <div className="cs-custom-row">
+          <div
+            className={`cs-custom-card${isCustom ? ' selected' : ''}`}
+            onClick={() => { setIsCustom(true); setSelected(null); }}
           >
-            <div className="flex-1 space-y-2">
-              <label className="text-xs font-headline font-bold text-muted-foreground uppercase tracking-widest">Enter Country Name</label>
-              <Input 
-                placeholder="The Republic of..." 
-                className="bg-white/5 border-white/10 h-14 text-lg" 
-                value={customName}
-                onChange={(e) => setCustomName(e.target.value)}
-              />
+            <div className="cs-custom-inner">
+              <div className="cs-custom-plus">+</div>
+              <div className="cs-custom-text">
+                <div className="cs-custom-name">Custom Nation</div>
+                <div className="cs-custom-desc">Start from balanced defaults. Name it yourself.</div>
+              </div>
             </div>
-            <Button 
-              size="lg" 
-              className="h-14 px-8 bg-accent text-accent-foreground font-headline accent-glow"
-              onClick={handleCustomStart}
+          </div>
+        </div>
+
+        {/* Custom name form */}
+        <AnimatePresence>
+          {isCustom && (
+            <motion.div
+              className="cs-form"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
             >
-              Initialize Simulation <ChevronRight className="ml-2 w-5 h-5" />
-            </Button>
-          </motion.div>
-        ) : selected ? (
-          <motion.div 
-            key="start-button"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="flex justify-center"
-          >
-            <Button 
-              size="lg" 
-              className="h-14 px-12 bg-accent text-accent-foreground font-headline accent-glow text-lg"
-              onClick={() => onSelect(COUNTRY_TEMPLATES.find(t => t.name === selected)!)}
+              <div className="cs-form-group">
+                <label className="cs-form-label">Nation Name</label>
+                <input
+                  className="cs-form-input"
+                  placeholder="The Republic of…"
+                  value={customName}
+                  onChange={e => setCustomName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && canStart && handleStart()}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Start bar */}
+        <AnimatePresence>
+          {canStart && (
+            <motion.div
+              className="cs-start-bar"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
             >
-              Start Simulation as {selected} <ChevronRight className="ml-2 w-5 h-5" />
-            </Button>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-    </div>
+              <div className="cs-start-info">
+                <div className="cs-start-country">
+                  {isCustom ? (customName || '…') : selected}
+                </div>
+                <div className="cs-start-desc">
+                  {isCustom ? 'Balanced starting conditions' : selectedTemplate?.description}
+                </div>
+              </div>
+              <button className="cs-start-btn" onClick={handleStart}>
+                Begin Simulation →
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </>
   );
 };
