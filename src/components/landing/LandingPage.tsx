@@ -1,229 +1,569 @@
 'use client';
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { 
-  ArrowRight, 
-  Globe, 
-  Cpu, 
-  TrendingUp, 
-  ShieldCheck, 
-  BarChart3, 
-  Zap, 
-  Users,
-  Play
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import React, { useEffect } from 'react';
+
+function useEconoStyles() {
+  useEffect(() => {
+    const id = 'econoquest-v4-styles';
+    if (document.getElementById(id)) return;
+    const el = document.createElement('style');
+    el.id = id;
+    el.textContent = `
+      @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap');
+
+      @keyframes eq-ticker {
+        0%   { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+      @keyframes eq-blink {
+        0%, 100% { opacity: 1; }
+        50%       { opacity: 0; }
+      }
+      @keyframes eq-fade-up {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      .eq-root * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      .eq-root {
+        --bg:      #f2ebe0;
+        --bg2:     #e9e0d2;
+        --bg3:     #dfd4c4;
+        --ink:     #1c1409;
+        --acc:     #bf3509;
+        --acc2:    #d94010;
+        --muted:   rgba(28,20,9,0.52);
+        --dim:     rgba(28,20,9,0.32);
+        --border:  rgba(28,20,9,0.13);
+        --border2: rgba(28,20,9,0.22);
+        --mono:    'DM Mono', 'Courier New', monospace;
+        --display: 'Bebas Neue', sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--mono);
+        line-height: 1.6;
+        min-height: 100vh;
+      }
+
+      /* TICKER */
+      .eq-ticker-wrap {
+        background: var(--acc);
+        color: #fff;
+        height: 30px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+      }
+      .eq-ticker-label {
+        padding: 0 14px;
+        font-size: 9px;
+        letter-spacing: .18em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        border-right: 1px solid rgba(255,255,255,.25);
+        height: 100%;
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+      }
+      .eq-ticker-track {
+        display: flex;
+        animation: eq-ticker 44s linear infinite;
+        white-space: nowrap;
+      }
+      .eq-ticker-item {
+        padding: 0 18px;
+        font-size: 10px;
+        letter-spacing: .05em;
+        opacity: .88;
+      }
+      .eq-ticker-item::after {
+        content: '·';
+        margin-left: 18px;
+        opacity: .4;
+      }
+
+      /* NAV */
+      .eq-nav {
+        border-bottom: 2px solid var(--border2);
+        padding: 0 44px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--bg);
+      }
+      .eq-logo { display: flex; align-items: center; gap: 10px; }
+      .eq-logo-dot {
+        width: 7px; height: 7px;
+        background: var(--acc);
+        border-radius: 50%;
+        animation: eq-blink 2s step-end infinite;
+        flex-shrink: 0;
+      }
+      .eq-logo-name {
+        font-family: var(--display);
+        font-size: 21px;
+        letter-spacing: .05em;
+        color: var(--ink);
+      }
+      .eq-logo-badge {
+        font-size: 8px;
+        letter-spacing: .12em;
+        color: var(--muted);
+        border: 1px solid var(--border2);
+        padding: 2px 7px;
+        text-transform: uppercase;
+      }
+      .eq-nav-links { display: flex; align-items: center; gap: 22px; }
+      .eq-nav-desktop { display: flex; align-items: center; gap: 22px; }
+      .eq-nav-link {
+        font-size: 11px;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        text-decoration: none;
+        transition: color .15s;
+      }
+      .eq-nav-link:hover { color: var(--acc); }
+
+      /* BUTTONS */
+      .eq-btn-primary {
+        background: var(--acc);
+        color: #fff;
+        border: none;
+        font-family: var(--mono);
+        font-weight: 500;
+        font-size: 11px;
+        letter-spacing: .09em;
+        text-transform: uppercase;
+        cursor: pointer;
+        padding: 10px 22px;
+        transition: background .12s;
+        white-space: nowrap;
+      }
+      .eq-btn-primary:hover { background: var(--acc2); }
+      .eq-btn-primary.lg { font-size: 14px; padding: 17px 40px; }
+
+      .eq-btn-ghost {
+        background: transparent;
+        color: var(--ink);
+        border: 1.5px solid var(--border2);
+        font-family: var(--mono);
+        font-weight: 500;
+        font-size: 11px;
+        letter-spacing: .09em;
+        text-transform: uppercase;
+        cursor: pointer;
+        padding: 10px 22px;
+        transition: background .12s, border-color .12s;
+        white-space: nowrap;
+      }
+      .eq-btn-ghost:hover { background: rgba(28,20,9,.05); border-color: rgba(28,20,9,.4); }
+      .eq-btn-ghost.lg { font-size: 14px; padding: 17px 40px; }
+
+      /* HERO */
+      .eq-hero {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 52px;
+        align-items: start;
+        padding: 60px 44px 72px;
+        border-bottom: 1px solid var(--border2);
+        animation: eq-fade-up .6s ease both;
+      }
+      .eq-classify-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+      }
+      .eq-classify-badge {
+        font-size: 8px;
+        font-weight: 500;
+        letter-spacing: .16em;
+        color: var(--acc);
+        border: 1px solid var(--acc);
+        padding: 3px 9px;
+        text-transform: uppercase;
+      }
+      .eq-classify-sub {
+        font-size: 9px;
+        color: var(--muted);
+        letter-spacing: .1em;
+        text-transform: uppercase;
+      }
+      .eq-headline {
+        font-family: var(--display);
+        font-size: clamp(64px, 10vw, 118px);
+        line-height: .88;
+        letter-spacing: .025em;
+        color: var(--ink);
+        margin-bottom: 30px;
+      }
+      .eq-headline .acc { color: var(--acc); }
+      .eq-headline .cursor::after {
+        content: '█';
+        color: var(--acc);
+        font-size: .58em;
+        animation: eq-blink 1s step-end infinite;
+      }
+      .eq-lead {
+        border-left: 3px solid var(--acc);
+        padding-left: 18px;
+        margin-bottom: 30px;
+        max-width: 520px;
+      }
+      .eq-lead p {
+        font-size: 15px;
+        line-height: 1.85;
+        color: var(--muted);
+      }
+      .eq-lead strong { color: var(--ink); font-weight: 500; }
+      .eq-ctas { display: flex; gap: 10px; flex-wrap: wrap; }
+
+      /* DATA PANEL */
+      .eq-panel { border: 1px solid var(--border2); background: var(--bg2); }
+      .eq-panel-head {
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--border2);
+        font-size: 8px;
+        font-weight: 500;
+        letter-spacing: .2em;
+        color: var(--acc);
+        text-transform: uppercase;
+      }
+      .eq-data-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 11px 18px;
+        border-bottom: 1px solid var(--border);
+        gap: 8px;
+      }
+      .eq-data-row:last-of-type { border-bottom: none; }
+      .eq-data-label { font-size: 11px; color: var(--muted); }
+      .eq-data-val { font-size: 12px; font-weight: 500; text-align: right; }
+      .eq-data-delta { font-size: 9px; text-align: right; margin-top: 1px; color: var(--dim); }
+      .eq-data-val.warn { color: var(--acc); }
+      .eq-data-delta.warn { color: var(--acc); }
+      .eq-note-box {
+        padding: 13px 18px;
+        background: rgba(191,53,9,.06);
+        border-top: 1px solid rgba(191,53,9,.18);
+      }
+      .eq-note-title {
+        font-size: 8px;
+        font-weight: 500;
+        letter-spacing: .14em;
+        color: var(--acc);
+        text-transform: uppercase;
+        margin-bottom: 4px;
+      }
+      .eq-note-body { font-size: 11px; color: var(--muted); line-height: 1.65; }
+
+      /* FEATURES */
+      .eq-features { padding: 64px 44px; border-bottom: 1px solid var(--border2); }
+      .eq-section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        border-bottom: 1px solid var(--border2);
+        padding-bottom: 18px;
+        margin-bottom: 44px;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .eq-section-title {
+        font-family: var(--display);
+        font-size: 36px;
+        letter-spacing: .05em;
+        color: var(--ink);
+      }
+      .eq-section-meta { font-size: 10px; color: var(--muted); letter-spacing: .09em; text-transform: uppercase; }
+      .eq-feature-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        background: var(--border);
+      }
+      .eq-feature-card { background: var(--bg); padding: 30px 26px; transition: background .18s; }
+      .eq-feature-card:hover { background: var(--bg2); }
+      .eq-feature-num { font-size: 9px; letter-spacing: .15em; color: var(--acc); margin-bottom: 11px; font-weight: 500; }
+      .eq-feature-title { font-family: var(--display); font-size: 27px; letter-spacing: .04em; color: var(--ink); margin-bottom: 3px; }
+      .eq-feature-sub { font-size: 10px; color: var(--muted); letter-spacing: .06em; margin-bottom: 13px; text-transform: uppercase; }
+      .eq-feature-body { font-size: 13px; color: var(--muted); line-height: 1.8; margin-bottom: 18px; }
+      .eq-feature-tag { font-size: 8px; color: var(--acc); letter-spacing: .1em; text-transform: uppercase; padding-top: 13px; border-top: 1px solid var(--border); }
+
+      /* QUOTE */
+      .eq-quote-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 56px;
+        align-items: center;
+        padding: 64px 44px;
+        border-bottom: 1px solid var(--border2);
+        background: var(--bg2);
+      }
+      .eq-big-quote { font-family: var(--display); font-size: 72px; color: var(--acc); line-height: .8; opacity: .22; margin-bottom: 6px; }
+      .eq-blockquote { font-family: var(--display); font-size: 22px; line-height: 1.25; letter-spacing: .025em; color: var(--ink); margin-bottom: 22px; }
+      .eq-attribution { display: flex; align-items: center; gap: 12px; }
+      .eq-attr-line { width: 1px; height: 34px; background: var(--acc); flex-shrink: 0; }
+      .eq-attr-name { font-size: 13px; font-weight: 500; color: var(--ink); }
+      .eq-attr-role { font-size: 9px; color: var(--muted); letter-spacing: .09em; text-transform: uppercase; margin-top: 2px; }
+      .eq-checklist { display: flex; flex-direction: column; gap: 14px; }
+      .eq-check-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 1px solid var(--border2); background: var(--bg); }
+      .eq-check-dot { width: 6px; height: 6px; background: var(--acc); border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+      .eq-check-title { font-size: 12px; font-weight: 500; color: var(--ink); margin-bottom: 3px; }
+      .eq-check-desc { font-size: 11px; color: var(--muted); line-height: 1.6; }
+
+      /* CTA */
+      .eq-cta-band {
+        padding: 64px 44px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 40px;
+        flex-wrap: wrap;
+      }
+      .eq-cta-eyebrow { font-size: 9px; color: var(--muted); letter-spacing: .16em; text-transform: uppercase; margin-bottom: 10px; }
+      .eq-cta-headline { font-family: var(--display); font-size: 54px; line-height: .9; letter-spacing: .02em; color: var(--ink); }
+      .eq-cta-aside { display: flex; flex-direction: column; align-items: center; gap: 9px; }
+      .eq-cta-note { font-size: 10px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+
+      /* FOOTER */
+      .eq-footer {
+        border-top: 2px solid var(--border2);
+        padding: 22px 44px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        background: var(--bg2);
+      }
+      .eq-footer-left { display: flex; align-items: center; gap: 12px; }
+      .eq-footer-wm { font-family: var(--display); font-size: 15px; letter-spacing: .07em; color: var(--ink); }
+      .eq-footer-copy { font-size: 9px; color: var(--muted); letter-spacing: .08em; }
+      .eq-footer-links { display: flex; gap: 20px; flex-wrap: wrap; }
+
+      /* RESPONSIVE */
+      @media (max-width: 720px) {
+        .eq-nav { padding: 0 20px; height: 52px; }
+        .eq-nav-desktop { display: none; }
+        .eq-hero { grid-template-columns: 1fr; gap: 32px; padding: 36px 20px 48px; }
+        .eq-features { padding: 44px 20px; }
+        .eq-feature-grid { grid-template-columns: 1fr; }
+        .eq-quote-section { grid-template-columns: 1fr; gap: 32px; padding: 44px 20px; }
+        .eq-cta-band { flex-direction: column; align-items: flex-start; gap: 24px; padding: 44px 20px; }
+        .eq-footer { padding: 20px; flex-direction: column; align-items: flex-start; }
+      }
+      @media (max-width: 440px) {
+        .eq-headline { font-size: clamp(52px, 16vw, 80px); }
+        .eq-ctas { flex-direction: column; }
+        .eq-btn-primary.lg, .eq-btn-ghost.lg { width: 100%; text-align: center; }
+      }
+    `;
+    document.head.appendChild(el);
+  }, []);
+}
+
+const TICKER = [
+  'Global GDP $105T (2023)', 'US CPI 3.4% YoY', 'Crude Oil ~$85/bbl',
+  'Fed Funds Rate 5.25–5.5%', 'Global Unemployment ~5.1%', 'World Trade Volume -1.2%',
+  'Emerging Market Debt at Record', 'EconoQuest — Open Beta',
+];
+
+const DATA_ROWS = [
+  { label: 'Global Debt / GDP',      val: '238%',   delta: 'World Bank 2023',        warn: false },
+  { label: 'Population in Poverty',  val: '~700M',  delta: 'World Bank estimate',     warn: false },
+  { label: 'Trade as % of GDP',      val: '57%',    delta: 'Down from 61% (2018)',    warn: true  },
+  { label: 'G20 Avg. Inflation',     val: '5.8%',   delta: 'IMF 2024 projection',     warn: true  },
+  { label: 'Global CO₂ Growth',      val: '+1.1%',  delta: 'IEA 2023',               warn: false },
+];
+
+const FEATURES = [
+  {
+    num: '01', title: 'Macro Engine',   sub: 'Linked-variable model',
+    body: 'Set interest rates, fiscal policy, and money supply. Watch inflation, unemployment, and growth respond in real time with transparent cause-and-effect.',
+    tag: 'GDP · CPI · Unemployment · Rates',
+  },
+  {
+    num: '02', title: 'Trade Network', sub: 'Global commerce',
+    body: 'Negotiate tariffs, manage currency regimes, and take on sovereign debt. Every policy ripples outward into partner economies.',
+    tag: 'Tariffs · FX · Trade Balances',
+  },
+  {
+    num: '03', title: 'R&D Matrix',    sub: 'Innovation system',
+    body: 'Invest in research and education to shift your productivity frontier. Model the long-run effects of technology on growth and competitiveness.',
+    tag: 'TFP · Human Capital · Innovation',
+  },
+];
+
+const CHECKS = [
+  { title: 'Transparent model',      desc: 'Every variable and its connections are visible. No magic — just economics.' },
+  { title: 'Scenario-based learning', desc: 'Start from real-world crisis templates: 2008, hyperinflation, stagflation.' },
+  { title: 'Built for educators',    desc: 'Designed for classroom use with structured debrief tools and scenario exports.' },
+];
 
 interface LandingPageProps {
   onStart: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
+export const LandingPage = ({ onStart }: LandingPageProps) => {
+  useEconoStyles();
+
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
-      {/* Background Decor */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/20 rounded-full blur-[160px] animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-accent/10 rounded-full blur-[160px] animate-pulse delay-1000" />
+    <div className="eq-root">
+
+      {/* TICKER */}
+      <div className="eq-ticker-wrap">
+        <div className="eq-ticker-label">Live Feed</div>
+        <div style={{ overflow: 'hidden', flex: 1 }}>
+          <div className="eq-ticker-track">
+            {[...TICKER, ...TICKER].map((t, i) => (
+              <span className="eq-ticker-item" key={i}>{t}</span>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="relative z-50 border-b border-white/5 bg-background/50 backdrop-blur-md">
-        <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center neon-glow">
-              <Globe className="text-white w-6 h-6" />
-            </div>
-            <span className="text-2xl font-bold font-headline tracking-tighter">ECONOQUEST</span>
+      {/* NAV */}
+      <nav className="eq-nav">
+        <div className="eq-logo">
+          <div className="eq-logo-dot" />
+          <span className="eq-logo-name">ECONOQUEST</span>
+          <span className="eq-logo-badge">Beta</span>
+        </div>
+        <div className="eq-nav-links">
+          <div className="eq-nav-desktop">
+            <a href="#features" className="eq-nav-link">Features</a>
+            <a href="#simulation" className="eq-nav-link">Simulation</a>
+            <a href="#rankings" className="eq-nav-link">Rankings</a>
           </div>
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
-            <a href="#features" className="hover:text-accent transition-colors">Features</a>
-            <a href="#sim" className="hover:text-accent transition-colors">Simulation</a>
-            <a href="#leaderboard" className="hover:text-accent transition-colors">Rankings</a>
-            <Button onClick={onStart} variant="outline" className="border-accent/20 hover:bg-accent/10 text-accent">
-              Enter Platform
-            </Button>
-          </div>
+          <button className="eq-btn-primary" onClick={onStart}>Enter Platform →</button>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="relative z-10 pt-20 pb-32">
-        <div className="container mx-auto px-6 text-center space-y-12">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="space-y-6 max-w-4xl mx-auto"
-          >
-            <Badge variant="outline" className="px-4 py-1.5 border-primary/30 bg-primary/5 text-primary rounded-full animate-bounce">
-              Now in V2.0 Beta — Advanced Trade Engine
-            </Badge>
-            <h1 className="text-6xl md:text-8xl font-bold font-headline leading-[0.9] tracking-tighter">
-              The World's Most <span className="text-gradient">Advanced</span> Economic Sandbox.
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto font-light leading-relaxed">
-              Design your nation, manipulate global trade, and steer your economy through real-world crises. 
-              EconoQuest is the definitive simulator for strategic governance.
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.8 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-6"
-          >
-            <Button 
-              size="lg" 
-              onClick={onStart}
-              className="h-16 px-10 bg-primary hover:bg-primary/90 text-white text-xl font-headline rounded-2xl neon-glow transition-all hover:scale-105"
-            >
-              Start Your Mandate <Play className="ml-3 w-5 h-5 fill-current" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="lg"
-              className="h-16 px-10 text-xl font-headline rounded-2xl hover:bg-white/5 border border-white/10"
-            >
-              Watch Trailer <Zap className="ml-3 w-5 h-5 text-accent" />
-            </Button>
-          </motion.div>
-
-          {/* Feature Highlight Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-20">
-            <FeatureItem 
-              icon={<TrendingUp className="text-accent" />}
-              title="Real-Time Macro Model"
-              description="Simulate inflation, GDP, and unemployment with a proprietary linked-variable engine."
-            />
-            <FeatureItem 
-              icon={<Globe className="text-primary" />}
-              title="Global Trade Network"
-              description="Manage tariffs, currency strength, and foreign lending to dominate international markets."
-            />
-            <FeatureItem 
-              icon={<Cpu className="text-purple-400" />}
-              title="R&D & Innovation"
-              description="Invest in technological progress to decouple your economy from traditional commodity cycles."
-            />
+      {/* HERO */}
+      <section className="eq-hero">
+        <div>
+          <div className="eq-classify-row">
+            <span className="eq-classify-badge">◉ Simulation Active</span>
+            <span className="eq-classify-sub">Mandate // Authority Granted</span>
           </div>
-        </div>
-      </section>
-
-      {/* Stats / Proof Section */}
-      <section className="relative z-10 py-24 border-y border-white/5 bg-white/2 backdrop-blur-sm">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
-            <StatItem value="1.2M+" label="Simulations Executed" />
-            <StatItem value="190+" label="Nations Built" />
-            <StatItem value="98.4%" label="Model Accuracy" />
-            <StatItem value="24/7" label="Real-time Events" />
-          </div>
-        </div>
-      </section>
-
-      {/* Social Proof Section */}
-      <section className="relative z-10 py-32 overflow-hidden">
-        <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row gap-16 items-center">
-            <div className="flex-1 space-y-8">
-              <h2 className="text-4xl md:text-5xl font-bold font-headline leading-tight">
-                Designed for Educators, <br />
-                <span className="text-accent">Played by Strategists.</span>
-              </h2>
-              <div className="space-y-6">
-                <CheckItem title="Enterprise-Grade Data Models" description="Our engine accounts for over 50 interconnected economic variables." />
-                <CheckItem title="Adaptive AI Advisory" description="Get socratic hints from our neural-trained economic advisor." />
-                <CheckItem title="Global Leaderboards" description="Compete for the title of Grand Architect of the Global Economy." />
-              </div>
-            </div>
-            <div className="flex-1 relative">
-              <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full" />
-              <div className="relative glass-card p-8 rounded-3xl border-primary/20 transform rotate-2">
-                <div className="flex gap-2 mb-4">
-                  {[1,2,3,4,5].map(i => <Zap key={i} className="w-5 h-5 text-accent fill-accent" />)}
-                </div>
-                <p className="text-lg italic font-light leading-relaxed text-muted-foreground mb-6">
-                  "EconoQuest has completely changed how we teach macroeconomic theory. It's not just a game; it's a high-fidelity laboratory for human governance."
-                </p>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-accent/20" />
-                  <div>
-                    <p className="font-bold">Dr. Elena Volkov</p>
-                    <p className="text-sm text-muted-foreground uppercase tracking-widest">Head of Macro at Global Inst.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="relative z-10 py-20 border-t border-white/5 bg-background">
-        <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-12">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Globe className="text-primary w-6 h-6" />
-              <span className="text-xl font-bold font-headline tracking-tighter">ECONOQUEST</span>
-            </div>
-            <p className="text-sm text-muted-foreground max-w-xs">
-              Empowering the next generation of global leaders through deep simulation.
+          <h1 className="eq-headline">
+            THE WORLD<br />
+            ECONOMY<br />
+            IS <span className="acc">YOURS</span>.<span className="cursor" />
+          </h1>
+          <div className="eq-lead">
+            <p>
+              Inflation. Debt spirals. Trade wars. Supply shocks.<br />
+              You didn't cause this mess — but you've just been handed the keys.<br />
+              <strong>Build an empire. Crash the market. Find out what actually works.</strong>
             </p>
           </div>
-          <div className="flex gap-12">
-            <FooterList title="Platform" items={['Dashboard', 'Leaderboard', 'API Docs', 'Simulation Engine']} />
-            <FooterList title="Company" items={['About Us', 'Careers', 'Contact', 'Terms']} />
+          <div className="eq-ctas">
+            <button className="eq-btn-primary lg" onClick={onStart}>▶ Assume Command</button>
+            <button className="eq-btn-ghost lg">Mission Briefing</button>
           </div>
+        </div>
+
+        <div className="eq-panel">
+          <div className="eq-panel-head">World Economic Snapshot</div>
+          {DATA_ROWS.map(({ label, val, delta, warn }) => (
+            <div className="eq-data-row" key={label}>
+              <span className="eq-data-label">{label}</span>
+              <div>
+                <div className={`eq-data-val${warn ? ' warn' : ''}`}>{val}</div>
+                <div className={`eq-data-delta${warn ? ' warn' : ''}`}>{delta}</div>
+              </div>
+            </div>
+          ))}
+          <div className="eq-note-box">
+            <div className="eq-note-title">Data from World Bank / IMF</div>
+            <div className="eq-note-body">Figures reflect 2024 estimates. Your simulation begins from this baseline.</div>
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section id="features" className="eq-features">
+        <div className="eq-section-header">
+          <h2 className="eq-section-title">Simulation Modules</h2>
+          <span className="eq-section-meta">Three core systems</span>
+        </div>
+        <div className="eq-feature-grid">
+          {FEATURES.map(({ num, title, sub, body, tag }) => (
+            <div className="eq-feature-card" key={num}>
+              <div className="eq-feature-num">{num}</div>
+              <div className="eq-feature-title">{title}</div>
+              <div className="eq-feature-sub">{sub}</div>
+              <p className="eq-feature-body">{body}</p>
+              <div className="eq-feature-tag">{tag}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* QUOTE + CHECKLIST */}
+      <section className="eq-quote-section">
+        <div>
+          <div className="eq-big-quote">"</div>
+          <blockquote className="eq-blockquote">
+            Not a game — a high-fidelity governance laboratory for the real world.
+          </blockquote>
+          <div className="eq-attribution">
+            <div className="eq-attr-line" />
+            <div>
+              <div className="eq-attr-name">Dr. Elena Volkov</div>
+              <div className="eq-attr-role">Head of Macro, Global Institute</div>
+            </div>
+          </div>
+        </div>
+        <div className="eq-checklist">
+          {CHECKS.map(({ title, desc }) => (
+            <div className="eq-check-item" key={title}>
+              <div className="eq-check-dot" />
+              <div>
+                <div className="eq-check-title">{title}</div>
+                <div className="eq-check-desc">{desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="eq-cta-band">
+        <div>
+          <div className="eq-cta-eyebrow">Your mandate begins now</div>
+          <h2 className="eq-cta-headline">READY TO<br />TAKE CONTROL?</h2>
+        </div>
+        <div className="eq-cta-aside">
+          <button className="eq-btn-primary lg" onClick={onStart}>▶ Assume Command</button>
+          <div className="eq-cta-note">Free to play · No account needed</div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="eq-footer">
+        <div className="eq-footer-left">
+          <span className="eq-footer-wm">ECONOQUEST</span>
+          <span className="eq-footer-copy">© 2025</span>
+        </div>
+        <div className="eq-footer-links">
+          {['Simulation', 'Leaderboard', 'About', 'Terms'].map(item => (
+            <a href="#" className="eq-nav-link" key={item}>{item}</a>
+          ))}
         </div>
       </footer>
+
     </div>
   );
 };
 
-const FeatureItem = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
-  <div className="glass-card p-10 rounded-3xl hover:bg-white/5 transition-all hover:-translate-y-2 group">
-    <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
-      {icon}
-    </div>
-    <h3 className="text-2xl font-bold font-headline mb-4">{title}</h3>
-    <p className="text-muted-foreground font-light leading-relaxed">{description}</p>
-  </div>
-);
-
-const StatItem = ({ value, label }: { value: string, label: string }) => (
-  <div className="space-y-2">
-    <div className="text-4xl md:text-5xl font-bold font-headline text-accent">{value}</div>
-    <div className="text-xs text-muted-foreground uppercase tracking-[0.2em] font-medium">{label}</div>
-  </div>
-);
-
-const CheckItem = ({ title, description }: { title: string, description: string }) => (
-  <div className="flex gap-4">
-    <div className="mt-1">
-      <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center">
-        <ShieldCheck className="w-4 h-4 text-accent" />
-      </div>
-    </div>
-    <div>
-      <h4 className="font-bold text-lg">{title}</h4>
-      <p className="text-sm text-muted-foreground font-light leading-snug">{description}</p>
-    </div>
-  </div>
-);
-
-const FooterList = ({ title, items }: { title: string, items: string[] }) => (
-  <div className="space-y-4">
-    <h4 className="text-xs font-bold uppercase tracking-widest text-accent">{title}</h4>
-    <ul className="space-y-2">
-      {items.map(item => (
-        <li key={item}>
-          <a href="#" className="text-sm text-muted-foreground hover:text-white transition-colors">{item}</a>
-        </li>
-      ))}
-    </ul>
-  </div>
-);
+export default LandingPage;

@@ -1,70 +1,102 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* EconoQuest — Global Styles
+   Theme: Warm Newsprint × Financial Terminal
+   Palette: aged paper bg · near-black ink · vermillion accent
+   Fonts:   Bebas Neue (display) · DM Mono (body / mono)
+   ─────────────────────────────────────────────────────── */
 
-@layer base {
-  :root {
-    --background: 230 25% 6%;
-    --foreground: 210 40% 98%;
-    --card: 230 25% 10%;
-    --card-foreground: 210 40% 98%;
-    --popover: 230 25% 8%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 255 80% 60%; /* Vibrant Purple */
-    --primary-foreground: 210 40% 98%;
-    --secondary: 230 25% 15%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 230 25% 20%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 180 100% 50%; /* Cyan Neon */
-    --accent-foreground: 230 25% 6%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 230 25% 18%;
-    --input: 230 25% 18%;
-    --ring: 180 100% 50%;
-    --radius: 1rem;
-  }
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap');
+
+/* ── Reset ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+/* ── Design Tokens ──────────────────────────────────────── */
+:root {
+  /* Palette */
+  --eq-bg:      #f2ebe0;   /* aged paper */
+  --eq-bg2:     #e9e0d2;   /* slightly darker surface */
+  --eq-bg3:     #dfd4c4;   /* panel backgrounds */
+  --eq-ink:     #1c1409;   /* near-black */
+  --eq-acc:     #bf3509;   /* vermillion red */
+  --eq-acc2:    #d94010;   /* hover state */
+  --eq-muted:   rgba(28, 20, 9, 0.52);
+  --eq-dim:     rgba(28, 20, 9, 0.32);
+  --eq-border:  rgba(28, 20, 9, 0.13);
+  --eq-border2: rgba(28, 20, 9, 0.22);
+
+  /* Typography */
+  --eq-font-display: 'Bebas Neue', sans-serif;
+  --eq-font-mono:    'DM Mono', 'Courier New', monospace;
+
+  /* Spacing scale */
+  --eq-gap-sm:  12px;
+  --eq-gap-md:  24px;
+  --eq-gap-lg:  44px;
+  --eq-gap-xl:  64px;
+
+  /* Transitions */
+  --eq-transition: 0.15s ease;
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground antialiased selection:bg-accent/30;
-    background-image: 
-      radial-gradient(circle at 0% 0%, hsla(255, 80%, 60%, 0.05) 0%, transparent 50%),
-      radial-gradient(circle at 100% 100%, hsla(180, 100%, 50%, 0.05) 0%, transparent 50%);
-  }
+/* ── Base Typography ─────────────────────────────────────── */
+body {
+  background:  var(--eq-bg);
+  color:       var(--eq-ink);
+  font-family: var(--eq-font-mono);
+  font-size:   14px;
+  line-height: 1.65;
+  -webkit-font-smoothing:  antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.font-headline {
-  font-family: 'Space Grotesk', sans-serif;
+/* Selection */
+::selection {
+  background: rgba(191, 53, 9, 0.18);
+  color: var(--eq-ink);
 }
 
-.font-body {
-  font-family: 'Inter', sans-serif;
+/* ── Utility Classes ─────────────────────────────────────── */
+
+/* Display / headline text */
+.eq-display {
+  font-family: var(--eq-font-display);
+  letter-spacing: 0.03em;
+  line-height: 0.9;
 }
 
-.glass-card {
-  @apply bg-card/40 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)];
+/* Mono body text — default, just an alias */
+.eq-mono { font-family: var(--eq-font-mono); }
+
+/* Accent colour text */
+.eq-acc { color: var(--eq-acc); }
+
+/* Muted text */
+.eq-muted { color: var(--eq-muted); }
+
+/* Vermillion top-border rule used on cards */
+.eq-rule-top { border-top: 1px solid var(--eq-border); }
+.eq-rule-top:hover { border-top-color: var(--eq-acc); }
+
+/* ── Keyframe Animations ─────────────────────────────────── */
+@keyframes eq-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
 }
 
-.neon-glow {
-  box-shadow: 0 0 20px -5px hsl(var(--accent) / 0.5);
+@keyframes eq-ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
-.text-gradient {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-primary animate-gradient-x;
+@keyframes eq-fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes gradient-x {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
-.animate-gradient-x {
-  background-size: 200% 200%;
-  animation: gradient-x 15s ease infinite;
-}
+/* ── Scrollbar ──────────────────────────────────────────────
+   Minimal, consistent with warm theme
+   ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--eq-bg2); }
+::-webkit-scrollbar-thumb { background: var(--eq-border2); }
+::-webkit-scrollbar-thumb:hover { background: var(--eq-acc); }
