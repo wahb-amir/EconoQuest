@@ -23,11 +23,19 @@ interface PolicyPanelProps {
   policy:    PolicyDecisions;
   onChange:  (key: string, value: unknown) => void;
   disabled:  boolean;
-  metrics:   EconomicMetrics;
-  quarter:   number;
+  currentMetrics: EconomicMetrics;
+  currentQuarter: number;
+  totalQuarters:  number;
+  wisdomScore:    number;
+  hintsUsed:      number;
+  hintsMax:       number;
+  quarterHistory: any[];
+  onHintUsed:     () => void;
+  country:        any;
 }
 
-export function PolicyPanel({ policy, onChange, disabled, metrics, quarter }: PolicyPanelProps) {
+export function PolicyPanel(props: PolicyPanelProps) {
+  const { policy, onChange, disabled, currentMetrics, currentQuarter } = props;
   return (
     <>
       <style>{css}</style>
@@ -38,7 +46,18 @@ export function PolicyPanel({ policy, onChange, disabled, metrics, quarter }: Po
         </div>
         <div>
           <div className="pp-label">Economic Advisor</div>
-          <AIHintSystem metrics={metrics} quarter={quarter} policy={policy} />
+          <AIHintSystem 
+            country={props.country}
+            currentQuarter={props.currentQuarter}
+            totalQuarters={props.totalQuarters}
+            wisdomScore={props.wisdomScore}
+            hintsUsed={props.hintsUsed}
+            hintsMax={props.hintsMax}
+            currentMetrics={props.currentMetrics}
+            currentPolicy={props.policy}
+            quarterHistory={props.quarterHistory}
+            onHintUsed={props.onHintUsed}
+          />
         </div>
       </div>
     </>
