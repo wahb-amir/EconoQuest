@@ -33,7 +33,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await register(email, password, username);
-      router.push("/dashboard");
+      router.push("/setup");
     } catch (err: any) {
       setError(err.message ?? "Registration failed");
     } finally {
@@ -308,21 +308,7 @@ export default function RegisterPage() {
 
       <div className="eq-root">
         {/* Ticker */}
-        <div className="eq-ticker-wrap">
-          <span className="eq-ticker-label">Live</span>
-          <div className="eq-ticker-track">
-            {[
-              "Top Score: 94pts — The Balanced Steward",
-              "New Nation: 'Novaria' — Round 3",
-              "Leaderboard Updated", "12,481 Nations Registered",
-              "AI Advisor Active", "Hall of Fame — 5 entries",
-              "Top Score: 94pts — The Balanced Steward",
-              "New Nation: 'Novaria' — Round 3",
-            ].map((item, i) => (
-              <span key={i} className="eq-ticker-item">{item}</span>
-            ))}
-          </div>
-        </div>
+        
 
         {/* Nav */}
         <nav className="eq-nav">
