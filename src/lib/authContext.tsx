@@ -6,10 +6,12 @@ import {
   useState,
   useEffect,
   useCallback,
-  type ReactNode
+  type ReactNode,
 } from "react";
 
-const AUTH_SERVICE = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL!;
+// ── All auth calls go through /api/auth/* (same domain) ──────────────────────
+// This keeps cookies on econoquest.wahb.space and avoids cross-domain issues
+const AUTH_BASE = "/api/auth";
 
 interface User {
   id:       string;
@@ -26,6 +28,7 @@ interface AuthContextType {
   logout:          () => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   loginWithGithub: () => Promise<void>;
+  getToken:        () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -34,15 +37,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user,      setUser]      = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // check session on mount
   useEffect(() => {
     fetchMe();
   }, []);
 
   const fetchMe = async () => {
     try {
-      const res = await fetch(`${AUTH_SERVICE}/auth/me`, {
-        credentials: "include",  // send cookies
+      const res = await fetch(`${AUTH_BASE}/me`, {
+        credentials: "include",
       });
       if (res.ok) {
         const data = await res.json();
@@ -58,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await fetch(`${AUTH_SERVICE}/auth/login`, {
+    const res = await fetch(`${AUTH_BASE}/login`, {
       method:      "POST",
       credentials: "include",
       headers:     { "Content-Type": "application/json" },
@@ -66,8 +68,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.detail ?? "Login failed");
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err as any).detail ?? "Login failed");
     }
 
     const data = await res.json();
@@ -75,11 +77,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(async (
-    email: string,
+    email:    string,
     password: string,
     username?: string
   ) => {
-    const res = await fetch(`${AUTH_SERVICE}/auth/register`, {
+    const res = await fetch(`${AUTH_BASE}/register`, {
       method:      "POST",
       credentials: "include",
       headers:     { "Content-Type": "application/json" },
@@ -87,8 +89,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.detail ?? "Registration failed");
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err as any).detail ?? "Registration failed");
     }
 
     const data = await res.json();
@@ -96,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await fetch(`${AUTH_SERVICE}/auth/logout`, {
+    await fetch(`${AUTH_BASE}/logout`, {
       method:      "POST",
       credentials: "include",
     });
@@ -104,19 +106,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loginWithGoogle = useCallback(async () => {
-    const res = await fetch(`${AUTH_SERVICE}/auth/google`, {
-      credentials: "include"
-    });
-    const { url } = await res.json();
-    window.location.href = url;
+    const res  = await fetch(`${AUTH_BASE}/google`, { credentials: "include" });
+    const data = await res.json();
+    window.location.href = data.url;
   }, []);
 
   const loginWithGithub = useCallback(async () => {
-    const res = await fetch(`${AUTH_SERVICE}/auth/github`, {
-      credentials: "include"
-    });
-    const { url } = await res.json();
-    window.location.href = url;
+    const res  = await fetch(`${AUTH_BASE}/github`, { credentials: "include" });
+    const data = await res.json();
+    window.location.href = data.url;
+  }, []);
+
+  // used by WebSocket to get token for cross-service auth
+  const getToken = useCallback(async (): Promise<string | null> => {
+    try {
+      const res = await fetch(`${AUTH_BASE}/token`, {
+        credentials: "include",
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.access_token ?? null;
+    } catch {
+      return null;
+    }
   }, []);
 
   return (
@@ -129,6 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       loginWithGoogle,
       loginWithGithub,
+      getToken,
     }}>
       {children}
     </AuthContext.Provider>
