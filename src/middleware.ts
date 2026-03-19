@@ -10,13 +10,6 @@ export async function middleware(request: NextRequest) {
   const refreshToken = request.cookies.get("refresh_token")?.value;
 
   const isProtected = PROTECTED_ROUTES.some(r => pathname.startsWith(r));
-  const isAuthRoute = AUTH_ROUTES.some(r => pathname.startsWith(r));
-
-  // already authenticated → redirect away from login/register
-  if (isAuthRoute && accessToken) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
-
   // not a protected route → allow through
   if (!isProtected) {
     return NextResponse.next();
