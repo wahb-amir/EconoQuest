@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-
+import { cookies } from "next/headers";
 const PROTECTED_ROUTES = ["/dashboard", "/game"];
 const AUTH_ROUTES      = ["/login", "/register"];
 const AUTH_SERVICE     = process.env.AUTH_SERVICE_URL!;
 
 export async function middleware(request: NextRequest) {
+  const cookiesList = await cookies();
+  const accessToken  = cookiesList.get("access_token")?.value;
+  const refreshToken = cookiesList.get("refresh_token")?.value;
   const { pathname } = request.nextUrl;
-  const accessToken  = request.cookies.get("access_token")?.value;
-  const refreshToken = request.cookies.get("refresh_token")?.value;
 
   const isProtected = PROTECTED_ROUTES.some(r => pathname.startsWith(r));
   const isAuthRoute = AUTH_ROUTES.some(r => pathname.startsWith(r));
