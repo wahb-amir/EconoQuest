@@ -33,9 +33,10 @@ interface GameOverModalProps {
   countryName: string;
   onNewGame:   () => void;
   onExit:      () => void;
+  onViewSummary: () => void;
 }
 
-export function GameOverModal({ open, score, countryName, onNewGame, onExit }: GameOverModalProps) {
+export function GameOverModal({ open, score, countryName, onNewGame, onExit, onViewSummary }: GameOverModalProps) {
   return (
     <>
       <style>{css}</style>
@@ -61,7 +62,8 @@ export function GameOverModal({ open, score, countryName, onNewGame, onExit }: G
                   <div className="gom-score-num">{score}</div>
                   <div className="gom-score-sub">Growth · Stability · Public welfare</div>
                 </div>
-                <button className="gom-btn-p" onClick={onNewGame}>▶ New Mandate</button>
+                <button className="gom-btn-p" onClick={onViewSummary}>View Mandate Review</button>
+                <button className="gom-btn-g" style={{ marginBottom: 8 }} onClick={onNewGame}>▶ New Mandate</button>
                 <button className="gom-btn-g" onClick={onExit}>Exit Platform</button>
               </div>
             </motion.div>
