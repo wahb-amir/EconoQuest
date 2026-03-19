@@ -27,7 +27,6 @@ export default function AuthCallbackPage() {
       setStatus("Setting session...");
 
       try {
-        console.log("[callback] calling set-session...");
         const res = await fetch(`${AUTH_SERVICE}/auth/set-session`, {
           method:      "POST",
           credentials: "include",
