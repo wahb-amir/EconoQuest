@@ -142,8 +142,15 @@ export default function GamePage() {
               policy={policy}
               onChange={updatePolicy}
               disabled={gameOver}
-              metrics={metrics}
-              quarter={quarter}
+              currentMetrics={metrics}
+              currentQuarter={quarter}
+              totalQuarters={8}
+              wisdomScore={calculateWisdomScore(history)}
+              hintsUsed={0}
+              hintsMax={3}
+              quarterHistory={history}
+              onHintUsed={() => {}}
+              country={country}
             />
             <MetricsPanel
               metrics={metrics}

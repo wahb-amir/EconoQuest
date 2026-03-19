@@ -18,7 +18,6 @@ export default function SetupPage() {
   const router = useRouter();
 
   const handleSelect = (country: CountryTemplate) => {
-    // Persist chosen country for the game page to read
     sessionStorage.setItem('eq_country', JSON.stringify(country));
     router.push('/game');
   };
