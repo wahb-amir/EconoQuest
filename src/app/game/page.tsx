@@ -11,13 +11,14 @@ import {
   CountryTemplate,
 } from '@/lib/simulation-engine';
 
-import { GameHeader }       from '@/components/game/panels/GameHeader';
-import { EventBar } from '@/components/game/panels/Eventbar';
-import { FlagsBar } from '@/components/game/panels/FlagBar';
-import { PolicyPanel } from '@/components/game/panels/Policypanel';
-import { MetricsPanel } from '@/components/game/panels/MetricsPanel';
+import { GameHeader }      from '@/components/game/panels/GameHeader';
+import { EventBar }        from '@/components/game/panels/Eventbar';
+import { FlagsBar }        from '@/components/game/panels/FlagBar';
+import { PolicyPanel }     from '@/components/game/panels/Policypanel';
+import { MetricsPanel }    from '@/components/game/panels/MetricsPanel';
 import { LeaderboardPanel } from '@/components/game/panels/LeaderBoardPanel';
-import { GameOverModal } from '@/components/game/panels/GameOver';
+import { GameOverModal }   from '@/components/game/panels/GameOver';
+import { AuthFeaturePopup } from '@/components/game/Authfeaturepopup';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -38,12 +39,12 @@ const GLOBAL_EVENTS = [
 
 function detectFlags(m: EconomicMetrics, printing: boolean): string[] {
   const f: string[] = [];
-  if (m.inflation > 15)      f.push('Hyperinflation risk active');
-  if (m.debtToGDP > 150)     f.push('Sovereign risk premium compounding');
-  if (m.reserves < 20)       f.push('Reserves critically low');
-  if (m.unemployment > 20)   f.push('Social instability threshold');
-  if (printing)               f.push('Currency printing active');
-  if (m.debtToGDP > 200)     f.push('Default risk imminent');
+  if (m.inflation > 15)    f.push('Hyperinflation risk active');
+  if (m.debtToGDP > 150)   f.push('Sovereign risk premium compounding');
+  if (m.reserves < 20)     f.push('Reserves critically low');
+  if (m.unemployment > 20) f.push('Social instability threshold');
+  if (printing)             f.push('Currency printing active');
+  if (m.debtToGDP > 200)   f.push('Default risk imminent');
   return f;
 }
 
@@ -66,15 +67,15 @@ export default function GamePage() {
   }, []);
 
   // ── Game state ─────────────────────────────────────────────────────────────
-  const [gameOver,    setGameOver]    = useState(false);
-  const [activeTab,   setActiveTab]   = useState<'simulation' | 'leaderboard'>('simulation');
-  const [quarter,     setQuarter]     = useState(1);
-  const [metrics,     setMetrics]     = useState<EconomicMetrics | null>(null);
-  const [history,     setHistory]     = useState<QuarterData[]>([]);
-  const [policy,      setPolicy]      = useState<PolicyDecisions>(INITIAL_POLICY);
-  const [prevPolicy,  setPrevPolicy]  = useState<PolicyDecisions>(INITIAL_POLICY);
-  const [event,       setEvent]       = useState(GLOBAL_EVENTS[3]);
-  const [flags,       setFlags]       = useState<string[]>([]);
+  const [gameOver,   setGameOver]   = useState(false);
+  const [activeTab,  setActiveTab]  = useState<'simulation' | 'leaderboard'>('simulation');
+  const [quarter,    setQuarter]    = useState(1);
+  const [metrics,    setMetrics]    = useState<EconomicMetrics | null>(null);
+  const [history,    setHistory]    = useState<QuarterData[]>([]);
+  const [policy,     setPolicy]     = useState<PolicyDecisions>(INITIAL_POLICY);
+  const [prevPolicy, setPrevPolicy] = useState<PolicyDecisions>(INITIAL_POLICY);
+  const [event,      setEvent]      = useState(GLOBAL_EVENTS[3]);
+  const [flags,      setFlags]      = useState<string[]>([]);
 
   // Initialise metrics once country loads
   useEffect(() => {
@@ -86,9 +87,9 @@ export default function GamePage() {
   // ── Actions ────────────────────────────────────────────────────────────────
   const handleNextQuarter = () => {
     if (!metrics) return;
-    const nextEvent = GLOBAL_EVENTS[Math.floor(Math.random() * GLOBAL_EVENTS.length)];
+    const nextEvent   = GLOBAL_EVENTS[Math.floor(Math.random() * GLOBAL_EVENTS.length)];
     const nextMetrics = calculateNextQuarter(metrics, prevPolicy, policy, nextEvent.multiplier);
-    const nextQ = quarter + 1;
+    const nextQ       = quarter + 1;
     setEvent(nextEvent);
     setMetrics(nextMetrics);
     setPrevPolicy(policy);
@@ -101,11 +102,17 @@ export default function GamePage() {
   const updatePolicy = (key: string, value: unknown) =>
     setPolicy(prev => ({ ...prev, [key]: value }));
 
-  // ── Guard ──────────────────────────────────────────────────────────────────
+  // ── Loading guard ──────────────────────────────────────────────────────────
   if (!country || !metrics) {
     return (
-      <div style={{ background: '#f2ebe0', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 12, color: 'rgba(28,20,9,.4)', letterSpacing: '.1em', textTransform: 'uppercase' }}>
+      <div style={{
+        background: '#f2ebe0', minHeight: '100vh',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <span style={{
+          fontFamily: "'DM Mono',monospace", fontSize: 12,
+          color: 'rgba(28,20,9,.4)', letterSpacing: '.1em', textTransform: 'uppercase',
+        }}>
           Loading…
         </span>
       </div>
@@ -117,6 +124,9 @@ export default function GamePage() {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div style={{ background: '#f2ebe0', minHeight: '100vh' }}>
+
+      {/* Auth feature popup — shows once per session for guests only */}
+      <AuthFeaturePopup />
 
       <GameHeader
         countryName={country.name}
@@ -175,11 +185,13 @@ export default function GamePage() {
         onNewGame={() => router.push('/setup')}
         onExit={() => router.push('/')}
       />
+
     </div>
   );
 }
 
-// ── Inline tab bar (tiny, not worth its own file) ─────────────────────────────
+// ── Inline tab bar ────────────────────────────────────────────────────────────
+
 const tabCss = `
   .tb-bar{border-bottom:1px solid rgba(28,20,9,.22);padding:0 40px;display:flex;background:#f2ebe0;overflow-x:auto}
   .tb-tab{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(28,20,9,.45);background:transparent;border:none;border-bottom:2px solid transparent;padding:13px 18px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:.12s;margin-bottom:-1px;white-space:nowrap;flex-shrink:0}
@@ -189,7 +201,8 @@ const tabCss = `
 `;
 
 function TabBar({
-  active, onChange
+  active,
+  onChange,
 }: {
   active: 'simulation' | 'leaderboard';
   onChange: (v: 'simulation' | 'leaderboard') => void;
@@ -198,10 +211,16 @@ function TabBar({
     <>
       <style>{tabCss}</style>
       <div className="tb-bar">
-        <button className={`tb-tab${active === 'simulation' ? ' active' : ''}`} onClick={() => onChange('simulation')}>
+        <button
+          className={`tb-tab${active === 'simulation' ? ' active' : ''}`}
+          onClick={() => onChange('simulation')}
+        >
           ◈ Strategy Console
         </button>
-        <button className={`tb-tab${active === 'leaderboard' ? ' active' : ''}`} onClick={() => onChange('leaderboard')}>
+        <button
+          className={`tb-tab${active === 'leaderboard' ? ' active' : ''}`}
+          onClick={() => onChange('leaderboard')}
+        >
           ◎ Hall of Fame
         </button>
       </div>
