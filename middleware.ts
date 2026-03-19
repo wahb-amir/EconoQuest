@@ -28,7 +28,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // no access token but has refresh token → try rotation
   if (refreshToken) {
     try {
       const res = await fetch(`${AUTH_SERVICE}/auth/refresh`, {
@@ -50,7 +49,6 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // no valid session → redirect to login
   const loginUrl = new URL("/login", request.url);
   loginUrl.searchParams.set("redirect", pathname);
   return NextResponse.redirect(loginUrl);
@@ -58,8 +56,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
-    "/game/:path*",
     "/login",
     "/register",
   ],
