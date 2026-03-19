@@ -1,71 +1,168 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface RoundSummary {
-  round:   number;
+  round: number;
   summary: string;
 }
 
 interface SummaryData {
-  archetype:       string;
+  archetype: string;
   round_summaries: RoundSummary[];
-  final_state:     Record<string, number>;
+  final_state: Record<string, number>;
 }
 
 interface Props {
-  open:        boolean;
-  sessionId:   string;
-  finalState:  Record<string, unknown>;
-  score:       number;
+  open: boolean;
+  sessionId: string;
+  finalState: Record<string, unknown>;
+  score: number;
   countryName: string;
-  onNewGame:   () => void;
-  onExit:      () => void;
+  onNewGame: () => void;
+  onExit: () => void;
 }
 
 // ── Archetype config ──────────────────────────────────────────────────────────
 
-const ARCHETYPE_META: Record<string, { icon: string; color: string; tagline: string }> = {
-  "The Balanced Steward":  { icon: "⊕", color: "#2d6a2d", tagline: "Steady hand, sustainable growth." },
-  "The Inflation Hawk":    { icon: "◈", color: "#1a4a8a", tagline: "You crushed inflation — at a cost." },
-  "The Tech Visionary":    { icon: "◉", color: "#6b3fa0", tagline: "You bet on the future. It paid off." },
-  "The Populist":          { icon: "▼", color: "#bf3509", tagline: "The people loved you — until they didn't." },
-  "The Debt Architect":    { icon: "∑", color: "#8a4a1a", tagline: "Leverage is a tool. You wielded it hard." },
-  "The Isolationist":      { icon: "◻", color: "#4a6a4a", tagline: "Safe walls. Slow growth. Your choice." },
-  "The Gambler":           { icon: "◆", color: "#a04a1a", tagline: "High risk, high drama, mixed results." },
+const ARCHETYPE_META: Record<
+  string,
+  { icon: string; color: string; tagline: string }
+> = {
+  "The Balanced Steward": {
+    icon: "⊕",
+    color: "#2d6a2d",
+    tagline: "Steady hand, sustainable growth.",
+  },
+  "The Inflation Hawk": {
+    icon: "◈",
+    color: "#1a4a8a",
+    tagline: "You crushed inflation — at a cost.",
+  },
+  "The Tech Visionary": {
+    icon: "◉",
+    color: "#6b3fa0",
+    tagline: "You bet on the future. It paid off.",
+  },
+  "The Populist": {
+    icon: "▼",
+    color: "#bf3509",
+    tagline: "The people loved you — until they didn't.",
+  },
+  "The Debt Architect": {
+    icon: "∑",
+    color: "#8a4a1a",
+    tagline: "Leverage is a tool. You wielded it hard.",
+  },
+  "The Isolationist": {
+    icon: "◻",
+    color: "#4a6a4a",
+    tagline: "Safe walls. Slow growth. Your choice.",
+  },
+  "The Gambler": {
+    icon: "◆",
+    color: "#a04a1a",
+    tagline: "High risk, high drama, mixed results.",
+  },
 };
 
 // ── Verdict mapping ───────────────────────────────────────────────────────────
 
-function getVerdict(score: number): { label: string; color: string; desc: string } {
-  if (score >= 850) return { label: "Mandate of Heaven",  color: "#2d6a2d", desc: "An economy that will be studied for generations." };
-  if (score >= 700) return { label: "Distinguished Rule", color: "#1a4a8a", desc: "Exceptional governance. Your nation thrived." };
-  if (score >= 550) return { label: "Capable Leader",     color: "#4a6a4a", desc: "Solid fundamentals. Room to grow." };
-  if (score >= 400) return { label: "Mixed Legacy",       color: "#8a6a1a", desc: "Some wins, some losses. Your nation survived." };
-  if (score >= 250) return { label: "Troubled Mandate",   color: "#a04a1a", desc: "The cracks showed. Recovery was hard." };
-  return              { label: "Economic Collapse",       color: "#bf3509", desc: "The markets did not forgive your decisions." };
+function getVerdict(score: number): {
+  label: string;
+  color: string;
+  desc: string;
+} {
+  if (score >= 850)
+    return {
+      label: "Mandate of Heaven",
+      color: "#2d6a2d",
+      desc: "An economy that will be studied for generations.",
+    };
+  if (score >= 700)
+    return {
+      label: "Distinguished Rule",
+      color: "#1a4a8a",
+      desc: "Exceptional governance. Your nation thrived.",
+    };
+  if (score >= 550)
+    return {
+      label: "Capable Leader",
+      color: "#4a6a4a",
+      desc: "Solid fundamentals. Room to grow.",
+    };
+  if (score >= 400)
+    return {
+      label: "Mixed Legacy",
+      color: "#8a6a1a",
+      desc: "Some wins, some losses. Your nation survived.",
+    };
+  if (score >= 250)
+    return {
+      label: "Troubled Mandate",
+      color: "#a04a1a",
+      desc: "The cracks showed. Recovery was hard.",
+    };
+  return {
+    label: "Economic Collapse",
+    color: "#bf3509",
+    desc: "The markets did not forgive your decisions.",
+  };
 }
 
 // ── Metric display helpers ────────────────────────────────────────────────────
 
-function MetricPill({ label, value, unit, good }: { label: string; value: number; unit: string; good?: 'high' | 'low' | null }) {
-  const isGood = good === 'high' ? value > 3 : good === 'low' ? value < 5 : null;
-  const color = isGood === true ? '#2d6a2d' : isGood === false ? '#bf3509' : '#1c1409';
+function MetricPill({
+  label,
+  value,
+  unit,
+  good,
+}: {
+  label: string;
+  value: number;
+  unit: string;
+  good?: "high" | "low" | null;
+}) {
+  const isGood =
+    good === "high" ? value > 3 : good === "low" ? value < 5 : null;
+  const color =
+    isGood === true ? "#2d6a2d" : isGood === false ? "#bf3509" : "#1c1409";
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', gap: 2,
-      padding: '10px 14px',
-      background: 'rgba(28,20,9,.04)',
-      border: '1px solid rgba(28,20,9,.1)',
-    }}>
-      <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', color: 'rgba(28,20,9,.4)' }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+        padding: "10px 14px",
+        background: "rgba(28,20,9,.04)",
+        border: "1px solid rgba(28,20,9,.1)",
+      }}
+    >
+      <span
+        style={{
+          fontFamily: "'DM Mono',monospace",
+          fontSize: 8,
+          letterSpacing: ".14em",
+          textTransform: "uppercase",
+          color: "rgba(28,20,9,.4)",
+        }}
+      >
         {label}
       </span>
-      <span style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 22, letterSpacing: '.03em', color, lineHeight: 1 }}>
-        {typeof value === 'number' ? value.toFixed(1) : value}{unit}
+      <span
+        style={{
+          fontFamily: "'Bebas Neue',sans-serif",
+          fontSize: 22,
+          letterSpacing: ".03em",
+          color,
+          lineHeight: 1,
+        }}
+      >
+        {typeof value === "number" ? value.toFixed(1) : value}
+        {unit}
       </span>
     </div>
   );
@@ -304,45 +401,76 @@ const css = `
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function GameSummaryScreen({
-  open, sessionId, finalState, score, countryName, onNewGame, onExit,
+  open,
+  sessionId,
+  finalState,
+  score,
+  countryName,
+  onNewGame,
+  onExit,
 }: Props) {
-  const [data,    setData]    = useState<SummaryData | null>(null);
+  const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!open || !sessionId) return;
     setLoading(true);
-    setError('');
+    setError("");
     setData(null);
 
     async function fetchSummary() {
       try {
-        const res = await fetch('/api/game/final-summary', {
-          method:      'POST',
-          credentials: 'include',
-          headers:     { 'Content-Type': 'application/json' },
-          body:        JSON.stringify({ session_id: sessionId, final_state: finalState }),
+        const res = await fetch("/api/game/final-summary", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            session_id: sessionId,
+            final_state: finalState,
+          }),
         });
 
         if (!res.ok) throw new Error(`${res.status}`);
         const json = await res.json();
         setData(json);
       } catch (e: any) {
-        setError('Could not load your mandate review. Your results were still recorded.');
+        setError(
+          "Could not load your mandate review. Your results were still recorded.",
+        );
       } finally {
         setLoading(false);
       }
     }
-
+    // add inside useEffect where fetchSummary is called
+    async function submitScore() {
+      if (!data) return;
+      try {
+        await fetch("/api/auth/submit-score", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nation_name: countryName,
+            difficulty: "medium", 
+            raw_score: score,
+            archetype: data.archetype,
+          }),
+        });
+      } catch {
+        /* silent */
+      }
+    }
     fetchSummary();
   }, [open, sessionId]);
 
   if (!open) return null;
 
-  const archMeta  = data ? (ARCHETYPE_META[data.archetype] ?? ARCHETYPE_META["The Balanced Steward"]) : null;
-  const verdict   = getVerdict(score);
-  const fs        = finalState as any;
+  const archMeta = data
+    ? (ARCHETYPE_META[data.archetype] ?? ARCHETYPE_META["The Balanced Steward"])
+    : null;
+  const verdict = getVerdict(score);
+  const fs = finalState as any;
 
   return (
     <>
@@ -354,13 +482,16 @@ export function GameSummaryScreen({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-
           {/* Mentor header */}
           <div className="gss-mentor-bar">
             <div className="gss-mentor-avatar">EQ</div>
             <div>
-              <div className="gss-mentor-name">Economic Advisor — Post-Mandate Review</div>
-              <div className="gss-mentor-title">{countryName} · Mandate Complete</div>
+              <div className="gss-mentor-name">
+                Economic Advisor — Post-Mandate Review
+              </div>
+              <div className="gss-mentor-title">
+                {countryName} · Mandate Complete
+              </div>
             </div>
             <div className="gss-mentor-tag">Confidential Debrief</div>
           </div>
@@ -368,43 +499,94 @@ export function GameSummaryScreen({
           {loading ? (
             <div className="gss-loading">
               <div className="gss-loading-dot" />
-              <p className="gss-loading-text">Reviewing your mandate decisions…</p>
+              <p className="gss-loading-text">
+                Reviewing your mandate decisions…
+              </p>
             </div>
           ) : error ? (
             <>
               {/* Show basic score even if summary fails */}
-              <div style={{ padding: '28px', borderBottom: '1px solid rgba(28,20,9,.12)' }}>
-                <p style={{ fontSize: 11, color: 'rgba(28,20,9,.5)', lineHeight: 1.7 }}>{error}</p>
-                <div style={{ marginTop: 16, fontFamily: "'Bebas Neue',sans-serif", fontSize: 32, color: '#1c1409' }}>
+              <div
+                style={{
+                  padding: "28px",
+                  borderBottom: "1px solid rgba(28,20,9,.12)",
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 11,
+                    color: "rgba(28,20,9,.5)",
+                    lineHeight: 1.7,
+                  }}
+                >
+                  {error}
+                </p>
+                <div
+                  style={{
+                    marginTop: 16,
+                    fontFamily: "'Bebas Neue',sans-serif",
+                    fontSize: 32,
+                    color: "#1c1409",
+                  }}
+                >
                   Final Score: {score}
                 </div>
               </div>
               <div className="gss-actions">
-                <button className="gss-btn-primary" onClick={onNewGame}>New Nation →</button>
-                <button className="gss-btn-ghost"   onClick={onExit}>Exit</button>
+                <button className="gss-btn-primary" onClick={onNewGame}>
+                  New Nation →
+                </button>
+                <button className="gss-btn-ghost" onClick={onExit}>
+                  Exit
+                </button>
               </div>
             </>
           ) : data && archMeta ? (
             <>
               {/* Archetype + Score */}
               <div className="gss-archetype">
-                <span className="gss-arch-icon" style={{ color: archMeta.color }}>{archMeta.icon}</span>
+                <span
+                  className="gss-arch-icon"
+                  style={{ color: archMeta.color }}
+                >
+                  {archMeta.icon}
+                </span>
                 <div style={{ flex: 1 }}>
-                  <div className="gss-arch-eyebrow">Your Leadership Archetype</div>
-                  <div className="gss-arch-name" style={{ color: archMeta.color }}>{data.archetype}</div>
+                  <div className="gss-arch-eyebrow">
+                    Your Leadership Archetype
+                  </div>
+                  <div
+                    className="gss-arch-name"
+                    style={{ color: archMeta.color }}
+                  >
+                    {data.archetype}
+                  </div>
                   <div className="gss-arch-tagline">{archMeta.tagline}</div>
                 </div>
                 <div className="gss-score-badge">
-                  <div className="gss-score-num" style={{ color: verdict.color }}>{score}</div>
+                  <div
+                    className="gss-score-num"
+                    style={{ color: verdict.color }}
+                  >
+                    {score}
+                  </div>
                   <div className="gss-score-label">Wisdom Score</div>
                 </div>
               </div>
 
               {/* Verdict */}
               <div className="gss-verdict">
-                <div className="gss-verdict-line" style={{ background: verdict.color }} />
+                <div
+                  className="gss-verdict-line"
+                  style={{ background: verdict.color }}
+                />
                 <div>
-                  <div className="gss-verdict-label" style={{ color: verdict.color }}>{verdict.label}</div>
+                  <div
+                    className="gss-verdict-label"
+                    style={{ color: verdict.color }}
+                  >
+                    {verdict.label}
+                  </div>
                   <div className="gss-verdict-desc">{verdict.desc}</div>
                 </div>
               </div>
@@ -413,37 +595,90 @@ export function GameSummaryScreen({
               <div className="gss-metrics">
                 <div className="gss-metrics-title">Final Economic State</div>
                 <div className="gss-metrics-grid">
-                  <MetricPill label="GDP Growth"   value={fs.gdp}   unit="%" good="high" />
-                  <MetricPill label="Inflation"    value={fs.inf}   unit="%" good="low"  />
-                  <MetricPill label="Unemployment" value={fs.unemp} unit="%" good="low"  />
-                  <MetricPill label="Debt / GDP"   value={fs.dbt}   unit="%" good={null} />
-                  <MetricPill label="Public Mood"  value={fs.mood}  unit=""  good="high" />
-                  <MetricPill label="Innovation"   value={fs.inn}   unit="pts" good="high" />
-                  <MetricPill label="Currency"     value={fs.cur}   unit=""  good="high" />
-                  <MetricPill label="Trade Balance" value={fs.trd}  unit="%" good="high" />
+                  <MetricPill
+                    label="GDP Growth"
+                    value={fs.gdp}
+                    unit="%"
+                    good="high"
+                  />
+                  <MetricPill
+                    label="Inflation"
+                    value={fs.inf}
+                    unit="%"
+                    good="low"
+                  />
+                  <MetricPill
+                    label="Unemployment"
+                    value={fs.unemp}
+                    unit="%"
+                    good="low"
+                  />
+                  <MetricPill
+                    label="Debt / GDP"
+                    value={fs.dbt}
+                    unit="%"
+                    good={null}
+                  />
+                  <MetricPill
+                    label="Public Mood"
+                    value={fs.mood}
+                    unit=""
+                    good="high"
+                  />
+                  <MetricPill
+                    label="Innovation"
+                    value={fs.inn}
+                    unit="pts"
+                    good="high"
+                  />
+                  <MetricPill
+                    label="Currency"
+                    value={fs.cur}
+                    unit=""
+                    good="high"
+                  />
+                  <MetricPill
+                    label="Trade Balance"
+                    value={fs.trd}
+                    unit="%"
+                    good="high"
+                  />
                 </div>
               </div>
 
               {/* Mentor opening statement */}
               <div className="gss-mentor-intro">
                 <div className="gss-mentor-quote">
-                  {getMentorIntro(data.archetype, score, data.round_summaries.length)}
+                  {getMentorIntro(
+                    data.archetype,
+                    score,
+                    data.round_summaries.length,
+                  )}
                 </div>
-                <div className="gss-mentor-sig">— Your Economic Advisor · {data.round_summaries.length} Fiscal Years Reviewed</div>
+                <div className="gss-mentor-sig">
+                  — Your Economic Advisor · {data.round_summaries.length} Fiscal
+                  Years Reviewed
+                </div>
               </div>
 
               {/* Round-by-round timeline */}
               {data.round_summaries.length > 0 && (
                 <div className="gss-timeline">
-                  <div className="gss-timeline-title">Mandate Timeline — Advisor Notes</div>
+                  <div className="gss-timeline-title">
+                    Mandate Timeline — Advisor Notes
+                  </div>
                   {data.round_summaries.map((r, i) => (
                     <div key={r.round} className="gss-round-item">
                       <div className="gss-round-dot-col">
                         <div className="gss-round-dot">{r.round}</div>
-                        {i < data.round_summaries.length - 1 && <div className="gss-round-line" />}
+                        {i < data.round_summaries.length - 1 && (
+                          <div className="gss-round-line" />
+                        )}
                       </div>
                       <div className="gss-round-body">
-                        <div className="gss-round-label">Fiscal Year {r.round}</div>
+                        <div className="gss-round-label">
+                          Fiscal Year {r.round}
+                        </div>
                         <div className="gss-round-text">{r.summary}</div>
                       </div>
                     </div>
@@ -462,7 +697,6 @@ export function GameSummaryScreen({
               </div>
             </>
           ) : null}
-
         </motion.div>
       </div>
     </>
@@ -471,7 +705,11 @@ export function GameSummaryScreen({
 
 // ── Mentor intro generator ────────────────────────────────────────────────────
 
-function getMentorIntro(archetype: string, score: number, rounds: number): string {
+function getMentorIntro(
+  archetype: string,
+  score: number,
+  rounds: number,
+): string {
   const intros: Record<string, string[]> = {
     "The Balanced Steward": [
       `After reviewing your ${rounds} fiscal years at the helm, I see a leader who understood that stability and growth are not enemies — they are partners. You resisted the temptation of short-term fixes. That discipline is rare.`,
@@ -506,13 +744,14 @@ function getMentorIntro(archetype: string, score: number, rounds: number): strin
   const pool = intros[archetype] ?? intros["The Balanced Steward"];
   const base = pool[score > 600 ? 0 : 1] ?? pool[0];
 
-  const suffix = score >= 800
-    ? " This mandate will be cited as an example for future leaders."
-    : score >= 600
-    ? " Overall, this was a mandate worth studying."
-    : score >= 400
-    ? " There are lessons here worth taking into your next mandate."
-    : " I hope the experience itself was the lesson.";
+  const suffix =
+    score >= 800
+      ? " This mandate will be cited as an example for future leaders."
+      : score >= 600
+        ? " Overall, this was a mandate worth studying."
+        : score >= 400
+          ? " There are lessons here worth taking into your next mandate."
+          : " I hope the experience itself was the lesson.";
 
   return base + suffix;
 }
