@@ -1,22 +1,23 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   EconomicMetrics,
   PolicyDecisions,
   QuarterData,
   CountryTemplate,
-} from '@/lib/simulation-engine';
-import { useAuth } from '@/hooks/useAuth';
+} from "@/lib/simulation-engine";
+import { useAuth } from "@/hooks/useAuth";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIG
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PROXY_WS_URL = process.env.NEXT_PUBLIC_PROXY_URL!
-  .replace('https://', 'wss://')
-  .replace('http://', 'ws://');
+function getProxyWsUrl(): string {
+  const url = process.env.NEXT_PUBLIC_PROXY_URL ?? "";
+  return url.replace("https://", "wss://").replace("http://", "ws://");
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STYLES
@@ -70,24 +71,24 @@ const css = `
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface Props {
-  country:        CountryTemplate;
+  country: CountryTemplate;
   currentQuarter: number;
-  totalQuarters:  number;
-  wisdomScore:    number;
-  hintsUsed:      number;
-  hintsMax:       number;
+  totalQuarters: number;
+  wisdomScore: number;
+  hintsUsed: number;
+  hintsMax: number;
   currentMetrics: EconomicMetrics;
-  currentPolicy:  PolicyDecisions;
+  currentPolicy: PolicyDecisions;
   quarterHistory: QuarterData[];
-  onHintUsed:     () => void;
+  onHintUsed: () => void;
 }
 
 interface Message {
-  role: 'ai' | 'system' | 'error' | 'streaming';
+  role: "ai" | "system" | "error" | "streaming";
   text: string;
 }
 
-type WsStatus = 'disconnected' | 'connecting' | 'connected';
+type WsStatus = "disconnected" | "connecting" | "connected";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AUTO-FLAG DETECTOR
@@ -95,12 +96,30 @@ type WsStatus = 'disconnected' | 'connecting' | 'connected';
 
 function getAutoFlags(m: EconomicMetrics): string[] {
   const flags: string[] = [];
-  if (m.inflation > 15)        flags.push('⚠ Inflation exceeding 15% — hyperinflation dynamics are non-linear from here.');
-  if (m.debtToGDP > 150)       flags.push('⚠ Debt/GDP above 150% — sovereign risk premium is now actively compounding your deficit.');
-  if (m.reserves < 20)         flags.push('⚠ Reserves critically low — one bad quarter eliminates your currency defence capacity.');
-  if (m.unemployment > 20)     flags.push('⚠ Unemployment above 20% — social instability threshold is approaching.');
-  if (m.publicMood < 25)       flags.push('⚠ Public mood below 25 — policy paralysis risk is high at this approval level.');
-  if (m.currencyStrength < 45) flags.push('⚠ Currency at severe weakness — import costs are compounding your inflation.');
+  if (m.inflation > 15)
+    flags.push(
+      "⚠ Inflation exceeding 15% — hyperinflation dynamics are non-linear from here.",
+    );
+  if (m.debtToGDP > 150)
+    flags.push(
+      "⚠ Debt/GDP above 150% — sovereign risk premium is now actively compounding your deficit.",
+    );
+  if (m.reserves < 20)
+    flags.push(
+      "⚠ Reserves critically low — one bad quarter eliminates your currency defence capacity.",
+    );
+  if (m.unemployment > 20)
+    flags.push(
+      "⚠ Unemployment above 20% — social instability threshold is approaching.",
+    );
+  if (m.publicMood < 25)
+    flags.push(
+      "⚠ Public mood below 25 — policy paralysis risk is high at this approval level.",
+    );
+  if (m.currencyStrength < 45)
+    flags.push(
+      "⚠ Currency at severe weakness — import costs are compounding your inflation.",
+    );
   return flags;
 }
 
@@ -110,36 +129,43 @@ function getAutoFlags(m: EconomicMetrics): string[] {
 
 export const AIHintSystem: React.FC<Props> = (props) => {
   const {
-    country, currentQuarter, hintsUsed, hintsMax,
-    currentMetrics, currentPolicy, quarterHistory,
+    country,
+    currentQuarter,
+    hintsUsed,
+    hintsMax,
+    currentMetrics,
+    currentPolicy,
+    quarterHistory,
     onHintUsed,
   } = props;
 
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
-  const [messages,     setMessages]     = useState<Message[]>([]);
-  const [typing,       setTyping]        = useState(false);
-  const [streaming,    setStreaming]     = useState(false);
-  const [streamBuffer, setStreamBuffer] = useState('');
-  const [wsStatus,     setWsStatus]     = useState<WsStatus>('disconnected');
-  const [queuePos,     setQueuePos]     = useState<number | null>(null);
-  const [prevQuarter,  setPrevQuarter]  = useState(currentQuarter);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [typing, setTyping] = useState(false);
+  const [streaming, setStreaming] = useState(false);
+  const [streamBuffer, setStreamBuffer] = useState("");
+  const [wsStatus, setWsStatus] = useState<WsStatus>("disconnected");
+  const [queuePos, setQueuePos] = useState<number | null>(null);
+  const [prevQuarter, setPrevQuarter] = useState(currentQuarter);
 
-  const wsRef    = useRef<WebSocket | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // ── Auto-scroll ────────────────────────────────────────────────────────────
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, typing, streamBuffer]);
 
   // ── Welcome message ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!country?.name) return;
-    setMessages([{
-      role: 'ai',
-      text: `Advisor online for ${country.name}. I won't tell you what to do — but I'll make sure you've thought it through. ${hintsMax} questions available this mandate.`,
-    }]);
+    setMessages([
+      {
+        role: "ai",
+        text: `Advisor online for ${country.name}. I won't tell you what to do — but I'll make sure you've thought it through. ${hintsMax} questions available this mandate.`,
+      },
+    ]);
   }, [country?.name]);
 
   // ── Auto-flag on new quarter ───────────────────────────────────────────────
@@ -149,9 +175,9 @@ export const AIHintSystem: React.FC<Props> = (props) => {
     setPrevQuarter(currentQuarter);
     const flags = getAutoFlags(currentMetrics);
     if (flags.length > 0) {
-      setMessages(prev => [
+      setMessages((prev) => [
         ...prev,
-        ...flags.map(f => ({ role: 'system' as const, text: f })),
+        ...flags.map((f) => ({ role: "system" as const, text: f })),
       ]);
     }
   }, [currentQuarter]);
@@ -167,35 +193,38 @@ export const AIHintSystem: React.FC<Props> = (props) => {
   }, []);
 
   // ── Build state payload ────────────────────────────────────────────────────
-  const buildStatePayload = useCallback(() => ({
-    round:  currentQuarter,
-    nation: country.name,
-    // policy inputs
-    ctx:    currentPolicy.taxRate,
-    itr:    currentPolicy.interestRate,
-    spd:    currentPolicy.spending,
-    rnd:    currentPolicy.rdInvestment,
-    fln:    currentPolicy.foreignLending,
-    wfr:    currentPolicy.investmentRisk,
-    tar:    currentPolicy.tariffLevel,
-    prt:    currentPolicy.moneyPrinting,
-    // metric outputs
-    gdp:    currentMetrics.gdp,
-    inf:    currentMetrics.inflation,
-    unemp:  currentMetrics.unemployment,
-    dbt:    currentMetrics.debtToGDP,
-    cur:    currentMetrics.currencyStrength,
-    trd:    currentMetrics.tradeBalance,
-    inn:    currentMetrics.innovationIndex,
-    sal:    currentMetrics.avgSalary,
-    mood:   currentMetrics.publicMood,
-    swf:    currentMetrics.reserves,
-  }), [currentQuarter, country.name, currentPolicy, currentMetrics]);
+  const buildStatePayload = useCallback(
+    () => ({
+      round: currentQuarter,
+      nation: country.name,
+      // policy inputs
+      ctx: currentPolicy.taxRate,
+      itr: currentPolicy.interestRate,
+      spd: currentPolicy.spending,
+      rnd: currentPolicy.rdInvestment,
+      fln: currentPolicy.foreignLending,
+      wfr: currentPolicy.investmentRisk,
+      tar: currentPolicy.tariffLevel,
+      prt: currentPolicy.moneyPrinting,
+      // metric outputs
+      gdp: currentMetrics.gdp,
+      inf: currentMetrics.inflation,
+      unemp: currentMetrics.unemployment,
+      dbt: currentMetrics.debtToGDP,
+      cur: currentMetrics.currencyStrength,
+      trd: currentMetrics.tradeBalance,
+      inn: currentMetrics.innovationIndex,
+      sal: currentMetrics.avgSalary,
+      mood: currentMetrics.publicMood,
+      swf: currentMetrics.reserves,
+    }),
+    [currentQuarter, country.name, currentPolicy, currentMetrics],
+  );
 
   // ── Request hint via WebSocket ─────────────────────────────────────────────
   const requestHint = useCallback(async () => {
     if (!isAuthenticated) {
-      window.location.href = '/login';
+      window.location.href = "/login";
       return;
     }
 
@@ -203,22 +232,7 @@ export const AIHintSystem: React.FC<Props> = (props) => {
     if (hintsLeft <= 0 || typing || streaming) return;
 
     // get access token from auth service
-    let accessToken = '';
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/auth/me`,
-        { credentials: 'include' }
-      );
-      // token is in the cookie — proxy reads it directly
-      // we just verify the user is still valid
-      if (!res.ok) throw new Error('Session expired');
-    } catch {
-      setMessages(prev => [...prev, {
-        role: 'error',
-        text: 'Session expired. Please sign in again.',
-      }]);
-      return;
-    }
+   
 
     onHintUsed();
     setTyping(true);
@@ -230,91 +244,115 @@ export const AIHintSystem: React.FC<Props> = (props) => {
       wsRef.current = null;
     }
 
-    setWsStatus('connecting');
+    setWsStatus("connecting");
 
-    const ws = new WebSocket(`${PROXY_WS_URL}/ws/hint`);
+    const wsUrl = getProxyWsUrl();
+    const ws = new WebSocket(`${wsUrl}/ws/hint`);
     wsRef.current = ws;
 
-    ws.onopen = () => {
-      setWsStatus('connected');
-      // send state — proxy reads access_token from cookie via the HTTP upgrade
-      // we send state payload directly since cookie auth happens at HTTP level
-      ws.send(JSON.stringify({
-        state: buildStatePayload(),
-      }));
-    };
+    ws.onopen = async () => {
+      setWsStatus("connected");
 
-    let fullHint = '';
+      // fetch token via same-domain API route
+      let token = "";
+      try {
+        const tokenRes = await fetch("/api/auth/token", {
+          credentials: "include",
+        });
+        if (tokenRes.ok) {
+          const tokenData = await tokenRes.json();
+          token = tokenData.access_token ?? "";
+        }
+      } catch {
+        // token fetch failed — will get auth error from proxy
+      }
+
+      ws.send(
+        JSON.stringify({
+          token,
+          state: buildStatePayload(),
+        }),
+      );
+    };
+    let fullHint = "";
 
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data as string);
 
         switch (msg.type) {
-
-          case 'connected':
+          case "connected":
             // WS established, waiting for state
             break;
 
-          case 'cache_hit':
+          case "cache_hit":
             setTyping(false);
             setStreaming(true);
-            setStreamBuffer('');
+            setStreamBuffer("");
             break;
 
-          case 'queued':
+          case "queued":
             setTyping(false);
             setQueuePos(msg.position);
             break;
 
-          case 'processing':
+          case "processing":
             setQueuePos(null);
             setTyping(false);
             setStreaming(true);
-            setStreamBuffer('');
+            setStreamBuffer("");
             break;
 
-          case 'meta':
+          case "meta":
             // conflicts detected — show them
             if (msg.conflicts?.length > 0) {
               const conflictText = msg.conflicts
                 .map((c: any) => `⚡ ${c.message}`)
-                .join('\n');
-              setMessages(prev => [...prev, {
-                role: 'system',
-                text: conflictText,
-              }]);
+                .join("\n");
+              setMessages((prev) => [
+                ...prev,
+                {
+                  role: "system",
+                  text: conflictText,
+                },
+              ]);
             }
             break;
 
-          case 'token':
+          case "token":
             // stream token to buffer
             fullHint += msg.text;
             setStreamBuffer(fullHint);
             break;
 
-          case 'done':
+          case "done":
             // streaming complete — promote buffer to real message
             setStreaming(false);
-            setStreamBuffer('');
+            setStreamBuffer("");
             if (fullHint.trim()) {
-              setMessages(prev => [...prev, {
-                role: 'ai',
-                text: fullHint.trim(),
-              }]);
+              setMessages((prev) => [
+                ...prev,
+                {
+                  role: "ai",
+                  text: fullHint.trim(),
+                },
+              ]);
             }
-            fullHint = '';
+            fullHint = "";
             ws.close();
             break;
 
-          case 'error':
+          case "error":
             setTyping(false);
             setStreaming(false);
-            setStreamBuffer('');
-            setMessages(prev => [...prev, {
-              role: 'error',
-              text: msg.message ?? 'Advisor connection failed.',
-            }]);
+            setStreamBuffer("");
+            setMessages((prev) => [
+              ...prev,
+              {
+                role: "error",
+                text: msg.message ?? "Advisor connection failed.",
+              },
+            ]);
             ws.close();
             break;
         }
@@ -324,46 +362,53 @@ export const AIHintSystem: React.FC<Props> = (props) => {
     };
 
     ws.onerror = () => {
-      setWsStatus('disconnected');
+      setWsStatus("disconnected");
       setTyping(false);
       setStreaming(false);
-      setStreamBuffer('');
-      setMessages(prev => [...prev, {
-        role: 'error',
-        text: 'Connection to advisor failed. Check your network and try again.',
-      }]);
+      setStreamBuffer("");
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "error",
+          text: "Connection to advisor failed. Check your network and try again.",
+        },
+      ]);
     };
 
     ws.onclose = () => {
-      setWsStatus('disconnected');
+      setWsStatus("disconnected");
       setTyping(false);
       setStreaming(false);
       wsRef.current = null;
     };
-
   }, [
-    isAuthenticated, hintsMax, hintsUsed,
-    typing, streaming, buildStatePayload, onHintUsed,
+    isAuthenticated,
+    hintsMax,
+    hintsUsed,
+    typing,
+    streaming,
+    buildStatePayload,
+    onHintUsed,
   ]);
 
   // ── Derived ────────────────────────────────────────────────────────────────
   const hintsLeft = hintsMax - hintsUsed;
   const exhausted = hintsLeft <= 0;
-  const busy      = typing || streaming;
+  const busy = typing || streaming;
 
   const btnLabel = (() => {
-    if (authLoading)    return 'Loading…';
-    if (!isAuthenticated) return '🔒 Sign in to use AI Advisor';
-    if (busy)           return 'Advisor thinking…';
-    if (exhausted)      return 'No hints remaining';
+    if (authLoading) return "Loading…";
+    if (!isAuthenticated) return "🔒 Sign in to use AI Advisor";
+    if (busy) return "Advisor thinking…";
+    if (exhausted) return "No hints remaining";
     return `▶ Request Analysis  (${hintsLeft} left)`;
   })();
 
   const pips = Array.from({ length: hintsMax }, (_, i) => (
     <div
       key={i}
-      className={`ai-hint-pip${i >= hintsLeft ? ' used' : ''}`}
-      title={i < hintsLeft ? 'Hint available' : 'Hint used'}
+      className={`ai-hint-pip${i >= hintsLeft ? " used" : ""}`}
+      title={i < hintsLeft ? "Hint available" : "Hint used"}
     />
   ));
 
@@ -372,24 +417,31 @@ export const AIHintSystem: React.FC<Props> = (props) => {
     <>
       <style>{css}</style>
       <div className="ai-root">
-
         {/* Header */}
         <div className="ai-head">
           <div className="ai-head-left">
             <span className="ai-head-title">Economic Advisor</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span className="ai-head-tag">Q{currentQuarter} · Socratic Mode</span>
-              <div
-                className={`ai-ws-status ${wsStatus}`}
-                title={wsStatus}
-              />
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span className="ai-head-tag">
+                Q{currentQuarter} · Socratic Mode
+              </span>
+              <div className={`ai-ws-status ${wsStatus}`} title={wsStatus} />
             </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-end",
+              gap: 4,
+            }}
+          >
             {isAuthenticated && (
               <>
                 <div className="ai-hint-counter">{pips}</div>
-                <div className="ai-hint-label">{hintsLeft} / {hintsMax} hints</div>
+                <div className="ai-hint-label">
+                  {hintsLeft} / {hintsMax} hints
+                </div>
               </>
             )}
           </div>
@@ -407,13 +459,13 @@ export const AIHintSystem: React.FC<Props> = (props) => {
                 transition={{ duration: 0.18 }}
               >
                 <div className="ai-avatar">
-                  {msg.role === 'ai' || msg.role === 'streaming'
-                    ? 'ADV'
-                    : msg.role === 'error'
-                    ? 'ERR'
-                    : 'SYS'}
+                  {msg.role === "ai" || msg.role === "streaming"
+                    ? "ADV"
+                    : msg.role === "error"
+                      ? "ERR"
+                      : "SYS"}
                 </div>
-                <div className="ai-bubble" style={{ whiteSpace: 'pre-line' }}>
+                <div className="ai-bubble" style={{ whiteSpace: "pre-line" }}>
                   {msg.text}
                 </div>
               </motion.div>
@@ -422,10 +474,14 @@ export const AIHintSystem: React.FC<Props> = (props) => {
 
           {/* Typing indicator */}
           {typing && !streaming && (
-            <motion.div className="ai-msg ai" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <motion.div
+              className="ai-msg ai"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
               <div className="ai-avatar">ADV</div>
               <div className="ai-typing">
-                {[0, 1, 2].map(i => (
+                {[0, 1, 2].map((i) => (
                   <div
                     key={i}
                     className="ai-typing-dot"
@@ -455,7 +511,6 @@ export const AIHintSystem: React.FC<Props> = (props) => {
 
         {/* Footer */}
         <div className="ai-footer">
-
           {/* Queue position */}
           {queuePos !== null && (
             <div className="ai-queue-badge">
@@ -465,21 +520,34 @@ export const AIHintSystem: React.FC<Props> = (props) => {
 
           {/* Guest notice */}
           {!isAuthenticated && !authLoading && (
-            <div style={{
-              fontSize: 10, color: 'rgba(28,20,9,.5)', lineHeight: 1.6,
-              padding: '8px 12px', background: 'rgba(28,20,9,.04)',
-              border: '1px solid rgba(28,20,9,.1)', textAlign: 'center',
-            }}>
+            <div
+              style={{
+                fontSize: 10,
+                color: "rgba(28,20,9,.5)",
+                lineHeight: 1.6,
+                padding: "8px 12px",
+                background: "rgba(28,20,9,.04)",
+                border: "1px solid rgba(28,20,9,.1)",
+                textAlign: "center",
+              }}
+            >
               AI hints are exclusive to registered players.
               <br />
-              <a href="/register" style={{ color: '#bf3509', textDecoration: 'none', fontWeight: 500 }}>
+              <a
+                href="/register"
+                style={{
+                  color: "#bf3509",
+                  textDecoration: "none",
+                  fontWeight: 500,
+                }}
+              >
                 Create a free account →
               </a>
             </div>
           )}
 
           <button
-            className={`ai-ask-btn${exhausted ? ' exhausted' : ''}${!isAuthenticated ? ' login' : ''}`}
+            className={`ai-ask-btn${exhausted ? " exhausted" : ""}${!isAuthenticated ? " login" : ""}`}
             onClick={requestHint}
             disabled={busy || exhausted || authLoading}
           >
@@ -488,11 +556,10 @@ export const AIHintSystem: React.FC<Props> = (props) => {
 
           <div className="ai-disclaimer">
             {isAuthenticated
-              ? 'Advisor asks questions. You make the decisions.'
-              : 'Sign in to unlock Socratic AI guidance.'}
+              ? "Advisor asks questions. You make the decisions."
+              : "Sign in to unlock Socratic AI guidance."}
           </div>
         </div>
-
       </div>
     </>
   );
