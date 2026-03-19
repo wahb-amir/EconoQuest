@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   EconomicMetrics,
@@ -8,6 +8,15 @@ import {
   QuarterData,
   CountryTemplate,
 } from '@/lib/simulation-engine';
+import { useAuth } from '@/hooks/useAuth';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────────────────────────────────────
+
+const PROXY_WS_URL = process.env.NEXT_PUBLIC_PROXY_URL!
+  .replace('https://', 'wss://')
+  .replace('http://', 'ws://');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STYLES
@@ -27,9 +36,11 @@ const css = `
   .ai-msg.ai{margin-right:auto}
   .ai-msg.system{margin-right:auto}
   .ai-msg.error{margin-right:auto}
+  .ai-msg.streaming{margin-right:auto}
   .ai-avatar{width:26px;height:18px;border:1px solid rgba(28,20,9,.18);display:flex;align-items:center;justify-content:center;font-size:7px;letter-spacing:.05em;flex-shrink:0;margin-top:3px;background:#e9e0d2;color:rgba(28,20,9,.5);text-transform:uppercase;font-weight:500}
   .ai-bubble{padding:10px 12px;font-size:11px;line-height:1.75;color:#1c1409;background:#e9e0d2;border:1px solid rgba(28,20,9,.1)}
   .ai-msg.ai .ai-bubble{border-left:2px solid #bf3509}
+  .ai-msg.streaming .ai-bubble{border-left:2px solid #bf3509;border-left-style:dashed}
   .ai-msg.system .ai-bubble{border-left:2px solid rgba(28,20,9,.3);background:rgba(28,20,9,.03);font-size:10px;color:rgba(28,20,9,.5)}
   .ai-msg.error .ai-bubble{border-left:2px solid #e24b4a;background:rgba(226,75,74,.05);color:#a32d2d}
   .ai-typing{display:flex;gap:4px;align-items:center;padding:10px 12px;background:#e9e0d2;border:1px solid rgba(28,20,9,.1);border-left:2px solid #bf3509}
@@ -39,9 +50,19 @@ const css = `
   .ai-ask-btn:hover:not(:disabled){background:#d94010}
   .ai-ask-btn:disabled{opacity:.35;cursor:not-allowed}
   .ai-ask-btn.exhausted{background:rgba(28,20,9,.12);color:rgba(28,20,9,.4)}
+  .ai-ask-btn.login{background:transparent;color:#bf3509;border:1.5px solid #bf3509}
+  .ai-ask-btn.login:hover{background:rgba(191,53,9,.06)}
+  .ai-queue-badge{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(28,20,9,.4);text-align:center;padding:4px 0}
   .ai-disclaimer{font-size:8px;color:rgba(28,20,9,.3);letter-spacing:.06em;text-align:center;line-height:1.5}
   .ai-hint-label{font-size:8px;color:rgba(28,20,9,.35);letter-spacing:.1em;text-transform:uppercase;text-align:right}
+  .ai-conflict{font-size:9px;color:#bf3509;letter-spacing:.06em;line-height:1.5;padding:6px 10px;background:rgba(191,53,9,.06);border:1px solid rgba(191,53,9,.15);margin-top:4px}
+  .ai-ws-status{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+  .ai-ws-status.connected{background:#2d6a2d}
+  .ai-ws-status.connecting{background:#d97706}
+  .ai-ws-status.disconnected{background:rgba(28,20,9,.2)}
   @keyframes bounce-dot{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-4px)}}
+  @keyframes cursor-blink{0%,100%{opacity:1}50%{opacity:0}}
+  .ai-cursor::after{content:'▌';font-size:.7em;color:#bf3509;animation:cursor-blink .7s step-end infinite}
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -62,115 +83,11 @@ interface Props {
 }
 
 interface Message {
-  role: 'ai' | 'system' | 'error';
+  role: 'ai' | 'system' | 'error' | 'streaming';
   text: string;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SYSTEM PROMPT
-// ─────────────────────────────────────────────────────────────────────────────
-
-function buildSystemPrompt(): string {
-  return `You are the Economic Advisor in EconoQuest, a macroeconomic governance simulation used to teach real-world economic reasoning.
-
-Your ONLY job is to ask ONE Socratic question per response. You never give direct policy recommendations, never say "you should raise rates" or "cut spending". You guide the player to reason for themselves.
-
-Rules:
-- ONE question per response. No preamble, no "Great question!", no follow-up sentences.
-- The question must be directly grounded in the player's SPECIFIC current data — reference actual numbers.
-- Questions should expose tensions between metrics (e.g. inflation vs unemployment, debt vs growth).
-- Vary your angle: sometimes focus on a single indicator, sometimes on the relationship between two, sometimes on a time-lag or second-order effect.
-- Difficulty should match the scenario difficulty. Hard scenarios get harder questions about compound dynamics.
-- Never repeat a question the player has already received this session.
-- Format: just the question, ending with a question mark. No lists, no headers, no markdown.`;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// USER PROMPT
-// ─────────────────────────────────────────────────────────────────────────────
-
-function buildUserPrompt(props: Props): string {
-  const {
-    country, currentQuarter, totalQuarters, wisdomScore,
-    hintsUsed, hintsMax, currentMetrics, currentPolicy, quarterHistory,
-  } = props;
-
-  const m = currentMetrics;
-  const p = currentPolicy;
-
-  const historyLines = quarterHistory.slice(1).map(q => {
-    const qm = q.metrics;
-    return `  Q${q.quarter}: GDP=${qm.gdp.toFixed(1)}% INF=${qm.inflation.toFixed(1)}% UNEMP=${qm.unemployment.toFixed(1)}% MOOD=${qm.publicMood} DEBT=${qm.debtToGDP.toFixed(0)}% FX=${qm.currencyStrength.toFixed(0)} RES=$${qm.reserves.toFixed(0)}B${q.flags?.length ? ` [${q.flags.join(', ')}]` : ''}`;
-  }).join('\n');
-
-  return `SCENARIO
-Country: ${country.name} (${country.region})
-Difficulty: ${country.difficulty}
-Real-world basis: ${country.realBasis}
-Progress: Q${currentQuarter} of ${totalQuarters}
-Wisdom Score: ${wisdomScore}/1000
-Hints remaining: ${hintsMax - hintsUsed} of ${hintsMax}
-
-CURRENT QUARTER METRICS
-GDP growth:         ${m.gdp.toFixed(1)}%
-Inflation:          ${m.inflation.toFixed(1)}%
-Unemployment:       ${m.unemployment.toFixed(1)}%
-Public mood:        ${m.publicMood}/100
-Avg salary:         $${m.avgSalary.toLocaleString()}
-Debt/GDP:           ${m.debtToGDP.toFixed(1)}%
-Currency strength:  ${m.currencyStrength.toFixed(0)}
-Trade balance:      ${m.tradeBalance.toFixed(1)}% of GDP
-Innovation index:   ${m.innovationIndex.toFixed(0)}/100
-Reserves:           $${m.reserves.toFixed(0)}B
-
-CURRENT POLICY DECISIONS
-Tax rate:           ${p.taxRate}%
-Interest rate:      ${p.interestRate}%
-Government spend:   ${p.spending}% of GDP
-Money printing:     ${p.moneyPrinting ? 'ACTIVE' : 'off'}
-R&D investment:     ${p.rdInvestment}% of GDP
-Tariff level:       ${p.tariffLevel}%
-Foreign lending:    ${p.foreignLending}% of GDP
-Investment risk:    ${p.investmentRisk}/100
-
-QUARTER HISTORY
-${historyLines || '  No quarters played yet.'}
-
-Ask me ONE Socratic question about my situation.`;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// API CALL
-// ─────────────────────────────────────────────────────────────────────────────
-
-async function fetchSocraticQuestion(props: Props): Promise<string> {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 200,
-      system: buildSystemPrompt(),
-      messages: [
-        { role: 'user', content: buildUserPrompt(props) },
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error((err as any)?.error?.message ?? `API error ${response.status}`);
-  }
-
-  const data = await response.json();
-  const text = data.content
-    ?.filter((b: any) => b.type === 'text')
-    .map((b: any) => b.text)
-    .join('') ?? '';
-
-  if (!text.trim()) throw new Error('Empty response from advisor.');
-  return text.trim();
-}
+type WsStatus = 'disconnected' | 'connecting' | 'connected';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AUTO-FLAG DETECTOR
@@ -194,31 +111,38 @@ function getAutoFlags(m: EconomicMetrics): string[] {
 export const AIHintSystem: React.FC<Props> = (props) => {
   const {
     country, currentQuarter, hintsUsed, hintsMax,
-    currentMetrics, onHintUsed,
+    currentMetrics, currentPolicy, quarterHistory,
+    onHintUsed,
   } = props;
 
-  // All hooks unconditionally first
-  const [messages, setMessages]       = useState<Message[]>([]);
-  const [typing, setTyping]           = useState(false);
-  const [prevQuarter, setPrevQuarter] = useState(currentQuarter);
-  const bottomRef                     = useRef<HTMLDivElement>(null);
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
 
-  // Welcome message — fires once country.name is available
+  const [messages,     setMessages]     = useState<Message[]>([]);
+  const [typing,       setTyping]        = useState(false);
+  const [streaming,    setStreaming]     = useState(false);
+  const [streamBuffer, setStreamBuffer] = useState('');
+  const [wsStatus,     setWsStatus]     = useState<WsStatus>('disconnected');
+  const [queuePos,     setQueuePos]     = useState<number | null>(null);
+  const [prevQuarter,  setPrevQuarter]  = useState(currentQuarter);
+
+  const wsRef    = useRef<WebSocket | null>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  // ── Auto-scroll ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, typing, streamBuffer]);
+
+  // ── Welcome message ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!country?.name) return;
     setMessages([{
       role: 'ai',
       text: `Advisor online for ${country.name}. I won't tell you what to do — but I'll make sure you've thought it through. ${hintsMax} questions available this mandate.`,
     }]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [country?.name]);
 
-  // Auto-scroll
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, typing]);
-
-  // Auto-flag when a new quarter resolves
+  // ── Auto-flag on new quarter ───────────────────────────────────────────────
   useEffect(() => {
     if (!currentMetrics) return;
     if (currentQuarter <= 1 || currentQuarter === prevQuarter) return;
@@ -232,32 +156,209 @@ export const AIHintSystem: React.FC<Props> = (props) => {
     }
   }, [currentQuarter]);
 
-  // Derived values
-  const hintsLeft = hintsMax - hintsUsed;
-  const exhausted = hintsLeft <= 0;
+  // ── Cleanup WS on unmount ──────────────────────────────────────────────────
+  useEffect(() => {
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+    };
+  }, []);
 
-  // Request a hint
-  const requestHint = async () => {
-    if (exhausted || typing || !country || !currentMetrics) return;
+  // ── Build state payload ────────────────────────────────────────────────────
+  const buildStatePayload = useCallback(() => ({
+    round:  currentQuarter,
+    nation: country.name,
+    // policy inputs
+    ctx:    currentPolicy.taxRate,
+    itr:    currentPolicy.interestRate,
+    spd:    currentPolicy.spending,
+    rnd:    currentPolicy.rdInvestment,
+    fln:    currentPolicy.foreignLending,
+    wfr:    currentPolicy.investmentRisk,
+    tar:    currentPolicy.tariffLevel,
+    prt:    currentPolicy.moneyPrinting,
+    // metric outputs
+    gdp:    currentMetrics.gdp,
+    inf:    currentMetrics.inflation,
+    unemp:  currentMetrics.unemployment,
+    dbt:    currentMetrics.debtToGDP,
+    cur:    currentMetrics.currencyStrength,
+    trd:    currentMetrics.tradeBalance,
+    inn:    currentMetrics.innovationIndex,
+    sal:    currentMetrics.avgSalary,
+    mood:   currentMetrics.publicMood,
+    swf:    currentMetrics.reserves,
+  }), [currentQuarter, country.name, currentPolicy, currentMetrics]);
+
+  // ── Request hint via WebSocket ─────────────────────────────────────────────
+  const requestHint = useCallback(async () => {
+    if (!isAuthenticated) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const hintsLeft = hintsMax - hintsUsed;
+    if (hintsLeft <= 0 || typing || streaming) return;
+
+    // get access token from auth service
+    let accessToken = '';
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/auth/me`,
+        { credentials: 'include' }
+      );
+      // token is in the cookie — proxy reads it directly
+      // we just verify the user is still valid
+      if (!res.ok) throw new Error('Session expired');
+    } catch {
+      setMessages(prev => [...prev, {
+        role: 'error',
+        text: 'Session expired. Please sign in again.',
+      }]);
+      return;
+    }
+
     onHintUsed();
     setTyping(true);
-    try {
-      const question = await fetchSocraticQuestion(props);
-      setMessages(prev => [...prev, { role: 'ai', text: question }]);
-    } catch (err: any) {
-      setMessages(prev => [
-        ...prev,
-        {
-          role: 'error',
-          text: `Advisor connection failed: ${err.message ?? 'Unknown error'}. Hint not consumed.`,
-        },
-      ]);
-    } finally {
-      setTyping(false);
-    }
-  };
+    setQueuePos(null);
 
-  // Hint pips
+    // close any existing WS
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+
+    setWsStatus('connecting');
+
+    const ws = new WebSocket(`${PROXY_WS_URL}/ws/hint`);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      setWsStatus('connected');
+      // send state — proxy reads access_token from cookie via the HTTP upgrade
+      // we send state payload directly since cookie auth happens at HTTP level
+      ws.send(JSON.stringify({
+        state: buildStatePayload(),
+      }));
+    };
+
+    let fullHint = '';
+
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data as string);
+
+        switch (msg.type) {
+
+          case 'connected':
+            // WS established, waiting for state
+            break;
+
+          case 'cache_hit':
+            setTyping(false);
+            setStreaming(true);
+            setStreamBuffer('');
+            break;
+
+          case 'queued':
+            setTyping(false);
+            setQueuePos(msg.position);
+            break;
+
+          case 'processing':
+            setQueuePos(null);
+            setTyping(false);
+            setStreaming(true);
+            setStreamBuffer('');
+            break;
+
+          case 'meta':
+            // conflicts detected — show them
+            if (msg.conflicts?.length > 0) {
+              const conflictText = msg.conflicts
+                .map((c: any) => `⚡ ${c.message}`)
+                .join('\n');
+              setMessages(prev => [...prev, {
+                role: 'system',
+                text: conflictText,
+              }]);
+            }
+            break;
+
+          case 'token':
+            // stream token to buffer
+            fullHint += msg.text;
+            setStreamBuffer(fullHint);
+            break;
+
+          case 'done':
+            // streaming complete — promote buffer to real message
+            setStreaming(false);
+            setStreamBuffer('');
+            if (fullHint.trim()) {
+              setMessages(prev => [...prev, {
+                role: 'ai',
+                text: fullHint.trim(),
+              }]);
+            }
+            fullHint = '';
+            ws.close();
+            break;
+
+          case 'error':
+            setTyping(false);
+            setStreaming(false);
+            setStreamBuffer('');
+            setMessages(prev => [...prev, {
+              role: 'error',
+              text: msg.message ?? 'Advisor connection failed.',
+            }]);
+            ws.close();
+            break;
+        }
+      } catch {
+        // malformed message — ignore
+      }
+    };
+
+    ws.onerror = () => {
+      setWsStatus('disconnected');
+      setTyping(false);
+      setStreaming(false);
+      setStreamBuffer('');
+      setMessages(prev => [...prev, {
+        role: 'error',
+        text: 'Connection to advisor failed. Check your network and try again.',
+      }]);
+    };
+
+    ws.onclose = () => {
+      setWsStatus('disconnected');
+      setTyping(false);
+      setStreaming(false);
+      wsRef.current = null;
+    };
+
+  }, [
+    isAuthenticated, hintsMax, hintsUsed,
+    typing, streaming, buildStatePayload, onHintUsed,
+  ]);
+
+  // ── Derived ────────────────────────────────────────────────────────────────
+  const hintsLeft = hintsMax - hintsUsed;
+  const exhausted = hintsLeft <= 0;
+  const busy      = typing || streaming;
+
+  const btnLabel = (() => {
+    if (authLoading)    return 'Loading…';
+    if (!isAuthenticated) return '🔒 Sign in to use AI Advisor';
+    if (busy)           return 'Advisor thinking…';
+    if (exhausted)      return 'No hints remaining';
+    return `▶ Request Analysis  (${hintsLeft} left)`;
+  })();
+
   const pips = Array.from({ length: hintsMax }, (_, i) => (
     <div
       key={i}
@@ -266,28 +367,35 @@ export const AIHintSystem: React.FC<Props> = (props) => {
     />
   ));
 
-  const btnLabel = typing
-    ? 'Analysing…'
-    : exhausted
-    ? 'No hints remaining'
-    : `▶ Request Analysis  (${hintsLeft} left)`;
-
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <>
       <style>{css}</style>
       <div className="ai-root">
 
+        {/* Header */}
         <div className="ai-head">
           <div className="ai-head-left">
             <span className="ai-head-title">Economic Advisor</span>
-            <span className="ai-head-tag">Q{currentQuarter} · Socratic Mode</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span className="ai-head-tag">Q{currentQuarter} · Socratic Mode</span>
+              <div
+                className={`ai-ws-status ${wsStatus}`}
+                title={wsStatus}
+              />
+            </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-            <div className="ai-hint-counter">{pips}</div>
-            <div className="ai-hint-label">{hintsLeft} / {hintsMax} hints</div>
+            {isAuthenticated && (
+              <>
+                <div className="ai-hint-counter">{pips}</div>
+                <div className="ai-hint-label">{hintsLeft} / {hintsMax} hints</div>
+              </>
+            )}
           </div>
         </div>
 
+        {/* Messages */}
         <div className="ai-messages">
           <AnimatePresence initial={false}>
             {messages.map((msg, i) => (
@@ -299,14 +407,21 @@ export const AIHintSystem: React.FC<Props> = (props) => {
                 transition={{ duration: 0.18 }}
               >
                 <div className="ai-avatar">
-                  {msg.role === 'ai' ? 'ADV' : msg.role === 'error' ? 'ERR' : 'SYS'}
+                  {msg.role === 'ai' || msg.role === 'streaming'
+                    ? 'ADV'
+                    : msg.role === 'error'
+                    ? 'ERR'
+                    : 'SYS'}
                 </div>
-                <div className="ai-bubble">{msg.text}</div>
+                <div className="ai-bubble" style={{ whiteSpace: 'pre-line' }}>
+                  {msg.text}
+                </div>
               </motion.div>
             ))}
           </AnimatePresence>
 
-          {typing && (
+          {/* Typing indicator */}
+          {typing && !streaming && (
             <motion.div className="ai-msg ai" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <div className="ai-avatar">ADV</div>
               <div className="ai-typing">
@@ -314,25 +429,67 @@ export const AIHintSystem: React.FC<Props> = (props) => {
                   <div
                     key={i}
                     className="ai-typing-dot"
-                    style={{ animation: `bounce-dot 1.2s ease-in-out ${i * 0.18}s infinite` }}
+                    style={{
+                      animation: `bounce-dot 1.2s ease-in-out ${i * 0.18}s infinite`,
+                    }}
                   />
                 ))}
               </div>
             </motion.div>
           )}
+
+          {/* Live streaming tokens */}
+          {streaming && streamBuffer && (
+            <motion.div
+              className="ai-msg streaming"
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="ai-avatar">ADV</div>
+              <div className="ai-bubble ai-cursor">{streamBuffer}</div>
+            </motion.div>
+          )}
+
           <div ref={bottomRef} />
         </div>
 
+        {/* Footer */}
         <div className="ai-footer">
+
+          {/* Queue position */}
+          {queuePos !== null && (
+            <div className="ai-queue-badge">
+              ⏳ Queued — position {queuePos} — advisor will reach you shortly
+            </div>
+          )}
+
+          {/* Guest notice */}
+          {!isAuthenticated && !authLoading && (
+            <div style={{
+              fontSize: 10, color: 'rgba(28,20,9,.5)', lineHeight: 1.6,
+              padding: '8px 12px', background: 'rgba(28,20,9,.04)',
+              border: '1px solid rgba(28,20,9,.1)', textAlign: 'center',
+            }}>
+              AI hints are exclusive to registered players.
+              <br />
+              <a href="/register" style={{ color: '#bf3509', textDecoration: 'none', fontWeight: 500 }}>
+                Create a free account →
+              </a>
+            </div>
+          )}
+
           <button
-            className={`ai-ask-btn${exhausted ? ' exhausted' : ''}`}
+            className={`ai-ask-btn${exhausted ? ' exhausted' : ''}${!isAuthenticated ? ' login' : ''}`}
             onClick={requestHint}
-            disabled={typing || exhausted}
+            disabled={busy || exhausted || authLoading}
           >
             {btnLabel}
           </button>
+
           <div className="ai-disclaimer">
-            Advisor asks questions. You make the decisions.
+            {isAuthenticated
+              ? 'Advisor asks questions. You make the decisions.'
+              : 'Sign in to unlock Socratic AI guidance.'}
           </div>
         </div>
 
