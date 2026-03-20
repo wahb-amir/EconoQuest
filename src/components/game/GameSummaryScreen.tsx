@@ -16,16 +16,17 @@ interface SummaryData {
   final_state: Record<string, number>;
 }
 
+// add to Props interface
 interface Props {
   open: boolean;
   sessionId: string;
   finalState: Record<string, unknown>;
   score: number;
   countryName: string;
+  difficulty: string;
   onNewGame: () => void;
   onExit: () => void;
 }
-
 // ── Archetype config ──────────────────────────────────────────────────────────
 
 const ARCHETYPE_META: Record<
@@ -406,6 +407,7 @@ export function GameSummaryScreen({
   finalState,
   score,
   countryName,
+  difficulty,
   onNewGame,
   onExit,
 }: Props) {
@@ -434,6 +436,19 @@ export function GameSummaryScreen({
         if (!res.ok) throw new Error(`${res.status}`);
         const json = await res.json();
         setData(json);
+
+        fetch("/api/auth/submit-score", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nation_name: countryName,
+            difficulty,
+            raw_score: score,
+            archetype: json.archetype ?? "",
+          }),
+        }).catch(() => {
+        });
       } catch (e: any) {
         setError(
           "Could not load your mandate review. Your results were still recorded.",
@@ -442,25 +457,7 @@ export function GameSummaryScreen({
         setLoading(false);
       }
     }
-    // add inside useEffect where fetchSummary is called
-    async function submitScore() {
-      if (!data) return;
-      try {
-        await fetch("/api/auth/submit-score", {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            nation_name: countryName,
-            difficulty: "medium", 
-            raw_score: score,
-            archetype: data.archetype,
-          }),
-        });
-      } catch {
-        /* silent */
-      }
-    }
+
     fetchSummary();
   }, [open, sessionId]);
 

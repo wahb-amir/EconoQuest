@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { v4 as uuidv4 } from 'uuid';
+import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
 import {
   EconomicMetrics,
   PolicyDecisions,
@@ -10,31 +10,56 @@ import {
   calculateNextQuarter,
   calculateWisdomScore,
   CountryTemplate,
-} from '@/lib/simulation-engine';
+} from "@/lib/simulation-engine";
 
-import { GameHeader }        from '@/components/game/panels/GameHeader';
-import { EventBar }          from '@/components/game/panels/Eventbar';
-import { FlagsBar }          from '@/components/game/panels/FlagBar';
-import { PolicyPanel }       from '@/components/game/panels/Policypanel';
-import { MetricsPanel }      from '@/components/game/panels/MetricsPanel';
-import { LeaderboardPanel }  from '@/components/game/panels/LeaderBoardPanel';
-import { GameOverModal }     from '@/components/game/panels/GameOver';
-import { AuthFeaturePopup }  from '@/components/game/Authfeaturepopup';
-import { GameSummaryScreen } from '@/components/game/GameSummaryScreen';
+import { GameHeader } from "@/components/game/panels/GameHeader";
+import { EventBar } from "@/components/game/panels/Eventbar";
+import { FlagsBar } from "@/components/game/panels/FlagBar";
+import { PolicyPanel } from "@/components/game/panels/Policypanel";
+import { MetricsPanel } from "@/components/game/panels/MetricsPanel";
+import { LeaderboardPanel } from "@/components/game/panels/LeaderBoardPanel";
+import { GameOverModal } from "@/components/game/panels/GameOver";
+import { AuthFeaturePopup } from "@/components/game/Authfeaturepopup";
+import { GameSummaryScreen } from "@/components/game/GameSummaryScreen";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const INITIAL_POLICY: PolicyDecisions = {
-  taxRate: 25, interestRate: 2, spending: 30,
-  moneyPrinting: false, rdInvestment: 2,
-  tariffLevel: 5, foreignLending: 0, investmentRisk: 10,
+  taxRate: 25,
+  interestRate: 2,
+  spending: 30,
+  moneyPrinting: false,
+  rdInvestment: 2,
+  tariffLevel: 5,
+  foreignLending: 0,
+  investmentRisk: 10,
 };
 
 const GLOBAL_EVENTS = [
-  { title: 'Market Boom',       multiplier: 0.8, description: 'Global demand surging.',     dir: 'up'     },
-  { title: 'Supply Crisis',     multiplier: 1.4, description: 'Input costs rising.',         dir: 'down'   },
-  { title: 'Tech Breakthrough', multiplier: 1.1, description: 'New productivity wave.',      dir: 'up'     },
-  { title: 'Calm Quarter',      multiplier: 1.0, description: 'No major global shocks.',     dir: 'stable' },
+  {
+    title: "Market Boom",
+    multiplier: 0.8,
+    description: "Global demand surging.",
+    dir: "up",
+  },
+  {
+    title: "Supply Crisis",
+    multiplier: 1.4,
+    description: "Input costs rising.",
+    dir: "down",
+  },
+  {
+    title: "Tech Breakthrough",
+    multiplier: 1.1,
+    description: "New productivity wave.",
+    dir: "up",
+  },
+  {
+    title: "Calm Quarter",
+    multiplier: 1.0,
+    description: "No major global shocks.",
+    dir: "stable",
+  },
 ];
 
 // ── CSS ───────────────────────────────────────────────────────────────────────
@@ -111,52 +136,55 @@ const layoutCss = `
 
 function detectFlags(m: EconomicMetrics, printing: boolean): string[] {
   const f: string[] = [];
-  if (m.inflation > 15)    f.push('Hyperinflation risk active');
-  if (m.debtToGDP > 150)   f.push('Sovereign risk premium compounding');
-  if (m.reserves < 20)     f.push('Reserves critically low');
-  if (m.unemployment > 20) f.push('Social instability threshold');
-  if (printing)             f.push('Currency printing active');
-  if (m.debtToGDP > 200)   f.push('Default risk imminent');
+  if (m.inflation > 15) f.push("Hyperinflation risk active");
+  if (m.debtToGDP > 150) f.push("Sovereign risk premium compounding");
+  if (m.reserves < 20) f.push("Reserves critically low");
+  if (m.unemployment > 20) f.push("Social instability threshold");
+  if (printing) f.push("Currency printing active");
+  if (m.debtToGDP > 200) f.push("Default risk imminent");
   return f;
 }
 
 // Converts game state to the flat object the summary-service expects
 function buildRoundState(
-  round:   number,
+  round: number,
   metrics: EconomicMetrics,
-  policy:  PolicyDecisions
+  policy: PolicyDecisions,
 ): Record<string, unknown> {
   return {
     round,
-    ctx:   policy.taxRate,
-    itr:   policy.interestRate,
-    spd:   policy.spending,
-    rnd:   policy.rdInvestment,
-    fln:   policy.foreignLending,
-    wfr:   policy.investmentRisk,
-    tar:   policy.tariffLevel,
-    prt:   policy.moneyPrinting,
-    gdp:   metrics.gdp,
-    inf:   metrics.inflation,
+    ctx: policy.taxRate,
+    itr: policy.interestRate,
+    spd: policy.spending,
+    rnd: policy.rdInvestment,
+    fln: policy.foreignLending,
+    wfr: policy.investmentRisk,
+    tar: policy.tariffLevel,
+    prt: policy.moneyPrinting,
+    gdp: metrics.gdp,
+    inf: metrics.inflation,
     unemp: metrics.unemployment,
-    dbt:   metrics.debtToGDP,
-    cur:   metrics.currencyStrength,
-    trd:   metrics.tradeBalance,
-    inn:   metrics.innovationIndex,
-    sal:   metrics.avgSalary,
-    mood:  metrics.publicMood,
-    swf:   metrics.reserves,
+    dbt: metrics.debtToGDP,
+    cur: metrics.currencyStrength,
+    trd: metrics.tradeBalance,
+    inn: metrics.innovationIndex,
+    sal: metrics.avgSalary,
+    mood: metrics.publicMood,
+    swf: metrics.reserves,
   };
 }
 
 // Fire-and-forget — sends current round to proxy → summary-service → Supabase
 // Does NOT block the UI. Failures are silent.
-function fireRoundSummary(sessionId: string, state: Record<string, unknown>): void {
-  fetch('/api/game/round-summary', {
-    method:      'POST',
-    credentials: 'include',
-    headers:     { 'Content-Type': 'application/json' },
-    body:        JSON.stringify({ session_id: sessionId, state }),
+function fireRoundSummary(
+  sessionId: string,
+  state: Record<string, unknown>,
+): void {
+  fetch("/api/game/round-summary", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId, state }),
   }).catch(() => {
     // background — silent fail, game continues
   });
@@ -169,35 +197,45 @@ export default function GamePage() {
 
   // stable session id for this entire game run
   // used to group all round summaries together in Supabase
-  const sessionIdRef = useRef<string>('');
+  const sessionIdRef = useRef<string>("");
 
   useEffect(() => {
     sessionIdRef.current = uuidv4();
   }, []);
 
-  const [country,     setCountry]     = useState<CountryTemplate | null>(null);
-  const [gameOver,    setGameOver]    = useState(false);
+  const [country, setCountry] = useState<CountryTemplate | null>(null);
+  const [gameOver, setGameOver] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
-  const [activeTab,   setActiveTab]   = useState<'simulation' | 'leaderboard'>('simulation');
-  const [quarter,     setQuarter]     = useState(1);
-  const [metrics,     setMetrics]     = useState<EconomicMetrics | null>(null);
-  const [history,     setHistory]     = useState<QuarterData[]>([]);
-  const [policy,      setPolicy]      = useState<PolicyDecisions>(INITIAL_POLICY);
-  const [prevPolicy,  setPrevPolicy]  = useState<PolicyDecisions>(INITIAL_POLICY);
-  const [event,       setEvent]       = useState(GLOBAL_EVENTS[3]);
-  const [flags,       setFlags]       = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<"simulation" | "leaderboard">(
+    "simulation",
+  );
+  const [quarter, setQuarter] = useState(1);
+  const [metrics, setMetrics] = useState<EconomicMetrics | null>(null);
+  const [history, setHistory] = useState<QuarterData[]>([]);
+  const [policy, setPolicy] = useState<PolicyDecisions>(INITIAL_POLICY);
+  const [prevPolicy, setPrevPolicy] = useState<PolicyDecisions>(INITIAL_POLICY);
+  const [event, setEvent] = useState(GLOBAL_EVENTS[3]);
+  const [flags, setFlags] = useState<string[]>([]);
 
   useEffect(() => {
-    const raw = sessionStorage.getItem('eq_country');
-    if (!raw) { router.replace('/setup'); return; }
-    try { setCountry(JSON.parse(raw)); }
-    catch { router.replace('/setup'); }
+    const raw = sessionStorage.getItem("eq_country");
+    if (!raw) {
+      router.replace("/setup");
+      return;
+    }
+    try {
+      setCountry(JSON.parse(raw));
+    } catch {
+      router.replace("/setup");
+    }
   }, []);
 
   useEffect(() => {
     if (!country) return;
     setMetrics(country.metrics);
-    setHistory([{ quarter: 1, metrics: country.metrics, policy: INITIAL_POLICY }]);
+    setHistory([
+      { quarter: 1, metrics: country.metrics, policy: INITIAL_POLICY },
+    ]);
   }, [country]);
 
   const handleNextQuarter = () => {
@@ -209,20 +247,29 @@ export default function GamePage() {
     fireRoundSummary(sessionIdRef.current, currentState);
 
     // ── Step 2: calculate next quarter outcomes ──
-    const nextEvent   = GLOBAL_EVENTS[Math.floor(Math.random() * GLOBAL_EVENTS.length)];
-    const nextMetrics = calculateNextQuarter(metrics, prevPolicy, policy, nextEvent.multiplier);
-    const nextQ       = quarter + 1;
+    const nextEvent =
+      GLOBAL_EVENTS[Math.floor(Math.random() * GLOBAL_EVENTS.length)];
+    const nextMetrics = calculateNextQuarter(
+      metrics,
+      prevPolicy,
+      policy,
+      nextEvent.multiplier,
+    );
+    const nextQ = quarter + 1;
 
     setEvent(nextEvent);
     setMetrics(nextMetrics);
     setPrevPolicy(policy);
     setQuarter(nextQ);
-    setHistory(prev => [...prev, {
-      quarter: nextQ,
-      metrics: nextMetrics,
-      policy,
-      event: nextEvent.title,
-    }]);
+    setHistory((prev) => [
+      ...prev,
+      {
+        quarter: nextQ,
+        metrics: nextMetrics,
+        policy,
+        event: nextEvent.title,
+      },
+    ]);
     setFlags(detectFlags(nextMetrics, policy.moneyPrinting));
 
     if (nextQ >= 8) {
@@ -233,26 +280,42 @@ export default function GamePage() {
     }
 
     if (window.innerWidth <= 1100) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
   const updatePolicy = (key: string, value: unknown) =>
-    setPolicy(prev => ({ ...prev, [key]: value }));
+    setPolicy((prev) => ({ ...prev, [key]: value }));
 
   if (!country || !metrics) {
     return (
-      <div style={{ background:'#f2ebe0', minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center' }}>
-        <span style={{ fontFamily:"'DM Mono',monospace", fontSize:12, color:'rgba(28,20,9,.4)', letterSpacing:'.1em', textTransform:'uppercase' }}>
+      <div
+        style={{
+          background: "#f2ebe0",
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "'DM Mono',monospace",
+            fontSize: 12,
+            color: "rgba(28,20,9,.4)",
+            letterSpacing: ".1em",
+            textTransform: "uppercase",
+          }}
+        >
           Loading…
         </span>
       </div>
     );
   }
 
-  const progress      = Math.round((quarter / 8) * 100);
+  const progress = Math.round((quarter / 8) * 100);
   const totalQuarters = 8;
-  const score         = calculateWisdomScore(history);
+  const score = calculateWisdomScore(history);
 
   // final state snapshot for the summary screen
   const finalStateSnapshot = buildRoundState(quarter, metrics, policy);
@@ -261,15 +324,14 @@ export default function GamePage() {
     <>
       <style>{layoutCss}</style>
       <div className="gp-wrap">
-
         <AuthFeaturePopup />
 
         <GameHeader
           countryName={country.name}
           quarter={quarter}
           isOver={gameOver}
-          onNewGame={() => router.push('/setup')}
-          onExit={() => router.push('/')}
+          onNewGame={() => router.push("/setup")}
+          onExit={() => router.push("/")}
         />
 
         <EventBar event={event} />
@@ -277,21 +339,21 @@ export default function GamePage() {
 
         <div className="tb-bar">
           <button
-            className={`tb-tab${activeTab === 'simulation' ? ' active' : ''}`}
-            onClick={() => setActiveTab('simulation')}
+            className={`tb-tab${activeTab === "simulation" ? " active" : ""}`}
+            onClick={() => setActiveTab("simulation")}
           >
             ◈ Strategy Console
           </button>
           <button
-            className={`tb-tab${activeTab === 'leaderboard' ? ' active' : ''}`}
-            onClick={() => setActiveTab('leaderboard')}
+            className={`tb-tab${activeTab === "leaderboard" ? " active" : ""}`}
+            onClick={() => setActiveTab("leaderboard")}
           >
             ◎ Hall of Fame
           </button>
         </div>
 
         <div className="gp-content">
-          {activeTab === 'simulation' && (
+          {activeTab === "simulation" && (
             <div className="gp-cols">
               <div className="gp-col-policy">
                 <div className="gp-section-label">Policy Controls</div>
@@ -314,7 +376,11 @@ export default function GamePage() {
                 <div className="gp-section-label">Economic Dashboard</div>
                 <MetricsPanel
                   metrics={metrics}
-                  previousMetrics={history.length > 1 ? history[history.length - 2].metrics : undefined}
+                  previousMetrics={
+                    history.length > 1
+                      ? history[history.length - 2].metrics
+                      : undefined
+                  }
                   history={history}
                   quarter={quarter}
                   progress={progress}
@@ -324,14 +390,15 @@ export default function GamePage() {
               </div>
             </div>
           )}
-          {activeTab === 'leaderboard' && <LeaderboardPanel />}
+          {activeTab === "leaderboard" && <LeaderboardPanel />}
         </div>
 
         {/* Mobile sticky bar */}
-        {activeTab === 'simulation' && (
+        {activeTab === "simulation" && (
           <div className="gp-sticky-bar">
             <div className="gp-sticky-quarter">
-              Q{quarter}<span>/ {totalQuarters}</span>
+              Q{quarter}
+              <span>/ {totalQuarters}</span>
             </div>
             {gameOver ? (
               <button
@@ -356,8 +423,8 @@ export default function GamePage() {
           open={gameOver && !showSummary}
           score={score}
           countryName={country.name}
-          onNewGame={() => router.push('/setup')}
-          onExit={() => router.push('/')}
+          onNewGame={() => router.push("/setup")}
+          onExit={() => router.push("/")}
           onViewSummary={() => setShowSummary(true)}
         />
 
@@ -368,10 +435,10 @@ export default function GamePage() {
           finalState={finalStateSnapshot}
           score={score}
           countryName={country.name}
-          onNewGame={() => router.push('/setup')}
-          onExit={() => router.push('/')}
+          difficulty={country.difficulty ?? "medium"} // ← add this
+          onNewGame={() => router.push("/setup")}
+          onExit={() => router.push("/")}
         />
-
       </div>
     </>
   );
