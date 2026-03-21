@@ -290,30 +290,30 @@ export const AIHintSystem: React.FC<Props> = (props) => {
             break;
 
           case "done":
-  if (flushTimerRef.current) {
-    clearTimeout(flushTimerRef.current);
-    flushTimerRef.current = null;
-  }
+            if (flushTimerRef.current) {
+              clearTimeout(flushTimerRef.current);
+              flushTimerRef.current = null;
+            }
 
-  const finalText = fullHintRef.current.trim();
-  const finalIdx = streamIndexRef.current;  // ← capture before reset
+            const finalText = fullHintRef.current.trim();
+            const finalIdx = streamIndexRef.current; // ← capture before reset
 
-  // reset refs immediately so any stale timer callbacks are no-ops
-  fullHintRef.current = "";
-  streamIndexRef.current = -1;
-  flushTimerRef.current = null;
+            // reset refs immediately so any stale timer callbacks are no-ops
+            fullHintRef.current = "";
+            streamIndexRef.current = -1;
+            flushTimerRef.current = null;
 
-  setMessages((prev) => {
-    const updated = [...prev];
-    if (finalIdx >= 0 && finalIdx < updated.length && finalText) {
-      updated[finalIdx] = { role: "ai", text: finalText };
-    }
-    return updated;
-  });
+            setMessages((prev) => {
+              const updated = [...prev];
+              if (finalIdx >= 0 && finalIdx < updated.length && finalText) {
+                updated[finalIdx] = { role: "ai", text: finalText };
+              }
+              return updated;
+            });
 
-  setStreaming(false);
-  ws.close();
-  break;
+            setStreaming(false);
+            ws.close();
+            break;
 
           case "error":
             setTyping(false);
@@ -416,26 +416,28 @@ export const AIHintSystem: React.FC<Props> = (props) => {
 
         <div className="ai-messages">
           <AnimatePresence initial={false}>
-            {messages.map((msg, i) => (
-              <motion.div
-                key={i}
-                className={`ai-msg ${msg.role}`}
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.18 }}
-              >
-                <div className="ai-avatar">
-                  {msg.role === "ai" || msg.role === "streaming"
-                    ? "ADV"
-                    : msg.role === "error"
-                      ? "ERR"
-                      : "SYS"}
-                </div>
-                <div className="ai-bubble" style={{ whiteSpace: "pre-line" }}>
-                  {msg.text}
-                </div>
-              </motion.div>
-            ))}
+            {messages
+              .filter((msg) => msg.role !== "system")
+              .map((msg, i) => (
+                <motion.div
+                  key={i}
+                  className={`ai-msg ${msg.role}`}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  <div className="ai-avatar">
+                    {msg.role === "ai" || msg.role === "streaming"
+                      ? "ADV"
+                      : msg.role === "error"
+                        ? "ERR"
+                        : "SYS"}
+                  </div>
+                  <div className="ai-bubble" style={{ whiteSpace: "pre-line" }}>
+                    {msg.text}
+                  </div>
+                </motion.div>
+              ))}
           </AnimatePresence>
 
           {typing && !streaming && (
