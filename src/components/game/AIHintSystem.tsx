@@ -237,6 +237,7 @@ export const AIHintSystem: React.FC<Props> = (props) => {
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data as string);
+        console.log(msg)
         switch (msg.type) {
           case "connected":
             break;
@@ -290,25 +291,30 @@ export const AIHintSystem: React.FC<Props> = (props) => {
             break;
 
           case "done":
-            if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
-            setMessages((prev) => {
-              const updated = [...prev];
-              const idx = streamIndexRef.current;
-              if (
-                idx >= 0 &&
-                idx < updated.length &&
-                fullHintRef.current.trim()
-              ) {
-                updated[idx] = { role: "ai", text: fullHintRef.current.trim() };
-              }
-              return updated;
-            });
-            fullHintRef.current = "";
-            streamIndexRef.current = -1;
-            flushTimerRef.current = null;
-            setStreaming(false);
-            ws.close();
-            break;
+  if (flushTimerRef.current) {
+    clearTimeout(flushTimerRef.current);
+    flushTimerRef.current = null;
+  }
+
+  const finalText = fullHintRef.current.trim();
+  const finalIdx = streamIndexRef.current;  // ← capture before reset
+
+  // reset refs immediately so any stale timer callbacks are no-ops
+  fullHintRef.current = "";
+  streamIndexRef.current = -1;
+  flushTimerRef.current = null;
+
+  setMessages((prev) => {
+    const updated = [...prev];
+    if (finalIdx >= 0 && finalIdx < updated.length && finalText) {
+      updated[finalIdx] = { role: "ai", text: finalText };
+    }
+    return updated;
+  });
+
+  setStreaming(false);
+  ws.close();
+  break;
 
           case "error":
             setTyping(false);
