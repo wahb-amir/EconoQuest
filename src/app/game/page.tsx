@@ -435,7 +435,7 @@ export default function GamePage() {
           finalState={finalStateSnapshot}
           score={score}
           countryName={country.name}
-          difficulty={country.difficulty ?? "medium"} // ← add this
+          difficulty={country.difficulty ?? "medium"}
           onNewGame={() => router.push("/setup")}
           onExit={() => router.push("/")}
         />

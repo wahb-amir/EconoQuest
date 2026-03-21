@@ -253,7 +253,6 @@ export const AIHintSystem: React.FC<Props> = (props) => {
           case "processing":
             setQueuePos(null);
             setTyping(false);
-            // add empty streaming message — we'll update it in place
             setMessages((prev) => {
               streamIndexRef.current = prev.length;
               return [...prev, { role: "streaming" as const, text: "" }];
@@ -271,21 +270,23 @@ export const AIHintSystem: React.FC<Props> = (props) => {
 
           case "token":
             fullHintRef.current += msg.text;
-            // batch flush every 80ms — prevents React from re-rendering on every word
-            if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
-            flushTimerRef.current = setTimeout(() => {
-              setMessages((prev) => {
-                const updated = [...prev];
-                const idx = streamIndexRef.current;
-                if (idx >= 0 && idx < updated.length) {
-                  updated[idx] = {
-                    role: "streaming",
-                    text: fullHintRef.current,
-                  };
-                }
-                return updated;
-              });
-            }, 80);
+
+            if (!flushTimerRef.current) {
+              flushTimerRef.current = setTimeout(() => {
+                flushTimerRef.current = null;
+                setMessages((prev) => {
+                  const updated = [...prev];
+                  const idx = streamIndexRef.current;
+                  if (idx >= 0 && idx < updated.length) {
+                    updated[idx] = {
+                      role: "streaming",
+                      text: fullHintRef.current,
+                    };
+                  }
+                  return updated;
+                });
+              }, 80);
+            }
             break;
 
           case "done":
