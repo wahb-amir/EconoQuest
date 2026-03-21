@@ -237,7 +237,6 @@ export const AIHintSystem: React.FC<Props> = (props) => {
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data as string);
-        console.log(msg)
         switch (msg.type) {
           case "connected":
             break;
