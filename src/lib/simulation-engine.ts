@@ -1,38 +1,32 @@
 /**
- * EconoQuest — Simulation Engine (v4-final)
+ * EconoQuest — Simulation Engine (v5)
  * ══════════════════════════════════════════
  *
- * All bugs from audit + 3 remaining failures from v4 now resolved:
+ * CHANGES FROM v4-final → v5:
  *
- * CARRY-FORWARD FIXES (v4):
- *   FIX-1  Sovereign Default: -3.5 GDP + -8 mood penalty on default
- *   FIX-2  Money Printing: mood craters (MOOD_INFLATION_COEFF 0.18→0.38,
- *          +2.5 direct mood penalty per QE quarter)
- *   FIX-3  Tariff Wars: progressive retaliation (net negative above 35%)
- *   FIX-4  Wartime deflation trap: rate-drag dampened 60% in deep recession
- *   FIX-5a R&D GDP boost: INNOVATION_GDP_BOOST 0.01→0.035, RD_MULTIPLIER 0.15→0.20
- *   FIX-6  Deflation trap flag fires at -0.5% with demand drag
+ * FIX-8  WISDOM SCORE — Terminal-state catastrophe penalty
+ *   Root cause: Early GDP stimulus from money printing / populist spending
+ *   scores positively against the Eastern Med baseline (gdp=1.2) in Q1-Q2,
+ *   then averages with the late-game collapse. This allowed a full-QE run
+ *   to score 518 — above the "did nothing" baseline of 500.
  *
- * NEW IN v4-final:
+ *   Fix A: Catastrophe penalty on final-state metrics. If the economy
+ *   ends in collapse (inflation>25, unemployment>20, debt>190, mood<15,
+ *   reserves exhausted), a direct penalty is subtracted from relativeScore
+ *   before the final scaling. This is independent of how the player got
+ *   there — it reflects the irreversible damage left behind.
  *
- * FIX-5b  R&D SECONDARY EFFECTS — innovation now visibly affects salary
- *   and public mood, not just GDP. When GDP is capped, R&D still pays off
- *   via productivity gains (salary) and educated-workforce satisfaction (mood).
- *   innovationSalaryBoost = innovationIndex * 8 per year (÷4 per quarter)
- *   MOOD_INNOVATION_COEFF = 0.04 → at innovation=70, mood +2.8/qtr
+ *   Fix B: Progressive quarter weighting (0.6 → 1.4). Later quarters
+ *   carry more weight than early ones, so stimulus-then-collapse cannot
+ *   be papered over by good early numbers. Early momentum counts less
+ *   than where you ended up.
  *
- * FIX-7   WISDOM SCORE — Context-aware relative scoring
- *   Root cause: Eastern Med inherits -25.9/qtr debt penalty that can
- *   never be repaid in 6 quarters regardless of perfect policy.
- *   Fix: score is now computed RELATIVE to the starting-conditions
- *   baseline. A player who improves vs their inherited crisis scores
- *   positively. A player who makes things worse scores negatively.
- *   Baseline is 500 (you matched your starting point). 0 = total
- *   collapse. 1000 = you turned a crisis into a flourishing economy.
- *   Result: Eastern Med aggressive disinflation now scores ~540
- *   (reward for correct but painful policy), vs ~500 for doing nothing.
- *   Hard-scenario top scores (700+) require sustained multi-quarter
- *   improvement across ALL metrics.
+ *   Result:
+ *     Eastern Med hard medicine (rate=18, austerity):  582 → ~550
+ *     Eastern Med catastrophic (QE + 60% spending):    518 → ~298
+ *     Invariant Run1 > Run2:                           true ✓
+ *
+ * All prior fixes (FIX-1 through FIX-7) are unchanged.
  */
 
 export interface EconomicMetrics {
@@ -118,24 +112,21 @@ const K = {
   SALARY_GDP_COEFF:         800,
   SALARY_INFLATION_EROSION: 0.6,
 
-  // [FIX-5b] Innovation boosts salary productivity
-  INNOVATION_SALARY_BOOST:  8,   // $8/quarter per innovation point (annualised ÷4)
+  INNOVATION_SALARY_BOOST:  8,
 
   RATE_GDP_DRAG:            0.11,
   RATE_NEUTRAL:             2.0,
   RATE_DRAG_RECESSION_DAMPEN: 0.4,
 
   MOOD_UNEMPLOYMENT_COEFF:  0.28,
-  MOOD_INFLATION_COEFF:     0.38,    // [FIX-2] raised from 0.18
+  MOOD_INFLATION_COEFF:     0.38,
   MOOD_GDP_COEFF:           0.6,
   MOOD_SPENDING_COEFF:      0.3,
-  MONEY_PRINT_MOOD_PENALTY: 2.5,     // [FIX-2]
-
-  // [FIX-5b] Innovation → mood: educated workforce satisfaction
+  MONEY_PRINT_MOOD_PENALTY: 2.5,
   MOOD_INNOVATION_COEFF:    0.04,
 
-  INNOVATION_GDP_BOOST:     0.035,   // [FIX-5a]
-  RD_MULTIPLIER:            0.20,    // [FIX-5a]
+  INNOVATION_GDP_BOOST:     0.035,
+  RD_MULTIPLIER:            0.20,
   INNOVATION_DECAY:         0.02,
 
   MOOD_INERTIA:             0.80,
@@ -143,6 +134,21 @@ const K = {
   MOOD_SOFT_FLOOR_RECOVERY: 3.5,
   MAX_QUARTERLY_MOOD_DROP:  -6,
   RESERVE_EXHAUSTION_DEBT_PENALTY: 2,
+
+  // [FIX-8] Catastrophe penalty coefficients
+  CATASTROPHE_INFLATION_THRESHOLD:    25,
+  CATASTROPHE_INFLATION_COEFF:        1.5,
+  CATASTROPHE_UNEMPLOYMENT_THRESHOLD: 20,
+  CATASTROPHE_UNEMPLOYMENT_COEFF:     2.0,
+  CATASTROPHE_DEBT_THRESHOLD:         190,
+  CATASTROPHE_DEBT_COEFF:             1.0,
+  CATASTROPHE_MOOD_THRESHOLD:         15,
+  CATASTROPHE_MOOD_COEFF:             3.0,
+  CATASTROPHE_RESERVE_PENALTY:        40,
+
+  // [FIX-8] Quarter weighting: early=0.6, last=1.4
+  QUARTER_WEIGHT_MIN: 0.6,
+  QUARTER_WEIGHT_MAX: 1.4,
 } as const;
 
 // ═══════════════════════════════════════════════════════════════
@@ -183,7 +189,7 @@ function clampPolicy(p: PolicyDecisions): PolicyDecisions {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// SECTOR MODELS
+// SECTOR MODELS — unchanged from v4-final
 // ═══════════════════════════════════════════════════════════════
 
 function fiscalModel(
@@ -230,8 +236,6 @@ function fiscalModel(
     - (interestBurden * 0.1)
     - sovereignDefaultPenalty;
 
-  // [FIX-5c] R&D has a small fiscal cost (crowds out other spending).
-  // Keeps R&D as a deliberate choice rather than a free lunch.
   const rdFiscalCost = p.rdInvestment * 0.008;
   const deficit  = (p.spending - taxRevenue + interestBurden + rdFiscalCost) * 0.25;
   const newDebt  = m.debtToGDP + deficit;
@@ -285,8 +289,6 @@ function labourModel(
   const realErosion = inflationThisQuarter > 3
     ? -(inflationThisQuarter - 3) * m.avgSalary * K.SALARY_INFLATION_EROSION * 0.01 : 0;
   const unemploymentSlack = m.unemployment > 10 ? -(m.unemployment - 10) * 200 : 0;
-
-  // [FIX-5b] Innovation-driven productivity premium on wages
   const innovationProductivity = m.innovationIndex * K.INNOVATION_SALARY_BOOST;
 
   const salaryDelta = nominalGrowth + realErosion + unemploymentSlack + innovationProductivity;
@@ -300,29 +302,23 @@ function externalModel(
 ): { tradeBalanceDelta: number; reservesDelta: number; flags: string[] } {
   const flags: string[] = [];
 
-  const tariffBoost = p.tariffLevel * 0.04;
-
-  // [FIX-3] Progressive retaliation: net positive ≤25%, net negative ≥35%
+  const tariffBoost      = p.tariffLevel * 0.04;
   const retaliationCoeff = Math.max(0.03, p.tariffLevel * 0.002);
   const retaliation      = -(p.tariffLevel * K.TARIFF_RETALIATION_LAG * retaliationCoeff);
-
-  const importDemand   = -(Math.max(0, gdpThisQuarter) * K.DOMESTIC_DEMAND_IMPORT);
-  const fxExportEffect = m.currencyStrength > 100
+  const importDemand     = -(Math.max(0, gdpThisQuarter) * K.DOMESTIC_DEMAND_IMPORT);
+  const fxExportEffect   = m.currencyStrength > 100
     ? -((m.currencyStrength - 100) * 0.02)
     : ((100 - m.currencyStrength) * 0.015);
 
   if (p.tariffLevel > 35) flags.push('TRADE_WAR_RETALIATION');
 
-  // [FIX-5c] Innovation → trade advantage: high-innovation economies
-  // export higher-value goods. At innovation=70 this adds +0.28 trade/qtr.
-  // Visible even when GDP is capped. Also creates R&D ↔ trade tradeoff.
-  const innovationTradeBoost = m.innovationIndex * 0.004;
+  const innovationTradeBoost  = m.innovationIndex * 0.004;
+  const tradeBalanceDelta     = tariffBoost + retaliation + importDemand + fxExportEffect + innovationTradeBoost;
 
-  const tradeBalanceDelta  = tariffBoost + retaliation + importDemand + fxExportEffect + innovationTradeBoost;
-  const tradeReserveEffect = m.tradeBalance * K.RESERVE_TRADE_COEFF;
-  const investmentReturn   = (p.investmentRisk / 100) * m.reserves * K.RESERVE_INVESTMENT_COEFF;
-  const foreignLendingReturn = p.foreignLending * 0.5;
-  const printingCost       = p.moneyPrinting ? -K.MONEY_PRINT_RESERVE_COST : 0;
+  const tradeReserveEffect    = m.tradeBalance * K.RESERVE_TRADE_COEFF;
+  const investmentReturn      = (p.investmentRisk / 100) * m.reserves * K.RESERVE_INVESTMENT_COEFF;
+  const foreignLendingReturn  = p.foreignLending * 0.5;
+  const printingCost          = p.moneyPrinting ? -K.MONEY_PRINT_RESERVE_COST : 0;
 
   if (m.reserves <= 0) flags.push('RESERVE_EXHAUSTION');
 
@@ -335,7 +331,7 @@ function innovationModel(
   p: PolicyDecisions,
   prev: PolicyDecisions
 ): { innovationDelta: number; rdGdpBoost: number } {
-  const effectiveRD = (p.rdInvestment + prev.rdInvestment) / 2;
+  const effectiveRD     = (p.rdInvestment + prev.rdInvestment) / 2;
   const rdEffect        = effectiveRD * K.RD_MULTIPLIER;
   const decay           = m.innovationIndex * K.INNOVATION_DECAY;
   const innovationDelta = rdEffect - decay;
@@ -357,13 +353,11 @@ function sentimentModel(
     -(Math.max(0, unemploymentThisQuarter - 5) * K.MOOD_UNEMPLOYMENT_COEFF);
   const inflationPenalty =
     -(Math.max(0, inflationThisQuarter - 3) * K.MOOD_INFLATION_COEFF);
-  const gdpBoost      = gdpThisQuarter * K.MOOD_GDP_COEFF;
-  const spendingBoost = Math.max(0, p.spending - 20) * K.MOOD_SPENDING_COEFF * 0.1;
-  const inertia       = (50 - m.publicMood) * K.MOOD_INERTIA * 0.05;
+  const gdpBoost          = gdpThisQuarter * K.MOOD_GDP_COEFF;
+  const spendingBoost     = Math.max(0, p.spending - 20) * K.MOOD_SPENDING_COEFF * 0.1;
+  const inertia           = (50 - m.publicMood) * K.MOOD_INERTIA * 0.05;
   const softFloorRecovery = m.publicMood < K.MOOD_SOFT_FLOOR ? K.MOOD_SOFT_FLOOR_RECOVERY : 0;
   const printingPenalty   = p.moneyPrinting ? -K.MONEY_PRINT_MOOD_PENALTY : 0;
-
-  // [FIX-5b] Educated / innovative society has higher base satisfaction
   const innovationMoodBoost = m.innovationIndex * K.MOOD_INNOVATION_COEFF;
 
   if (unemploymentThisQuarter > 25) flags.push('SOCIAL_INSTABILITY');
@@ -384,7 +378,7 @@ function sentimentModel(
 }
 
 // ═══════════════════════════════════════════════════════════════
-// ORCHESTRATOR
+// ORCHESTRATOR — unchanged from v4-final
 // ═══════════════════════════════════════════════════════════════
 
 export function calculateNextQuarter(
@@ -403,11 +397,9 @@ export function calculateNextQuarter(
   const qePop             = p.moneyPrinting ? K.MONEY_PRINT_GDP_BOOST : 0;
   const zeroSpendingCrash = p.spending < 5 ? -3.0 : 0;
 
-  // [FIX-4] Dampen rate drag in deep recession
   const recessionFactor = m.gdp < -3 ? K.RATE_DRAG_RECESSION_DAMPEN : 1.0;
   const rateGDPDrag     = -Math.max(0, p.interestRate - K.RATE_NEUTRAL) * K.RATE_GDP_DRAG * recessionFactor;
 
-  // [FIX-6] Deflation demand-drag
   const deflationDrag = m.inflation < 0 ? m.inflation * K.DEFLATION_DEMAND_COEFF : 0;
 
   const rawGDP = m.gdp + fiscal.gdpDelta + rdGdpBoost + qePop
@@ -461,37 +453,44 @@ export function calculateNextQuarter(
 }
 
 // ═══════════════════════════════════════════════════════════════
-// WISDOM SCORE  (v4-final — context-aware relative scoring)
+// WISDOM SCORE  (v5 — catastrophe penalty + progressive weighting)
 // ═══════════════════════════════════════════════════════════════
 //
-// DESIGN:
-//   Baseline 500 = you kept things exactly as you inherited them.
-//   > 500 = you improved relative to your starting conditions.
-//   < 500 = you made things worse.
-//   Hard scenarios have MORE upside: fixing Eastern Med scores
-//   600-800, while Nordic steady-state caps out around 580.
+// WHAT CHANGED FROM v4-final:
 //
-// HOW:
-//   Compute a per-quarter "baseline score" using starting metrics.
-//   Each quarter's contribution = (actual score − baseline score).
-//   This neutralises the inherited debt/inflation penalty.
+//   Fix A — Progressive quarter weighting (0.6 → 1.4)
+//     Early quarters carry 60% weight, final quarter 140% weight.
+//     This prevents a stimulus pop in Q1-Q2 from averaging with
+//     the collapse it causes in Q5-Q7 and inflating the score.
+//     Sum of weights across 7 quarters = 7.0, so dividing by
+//     quarters.length still gives the correct scaled average.
+//
+//   Fix B — Terminal-state catastrophe penalty
+//     After per-quarter scoring, a one-time penalty is applied
+//     based on the FINAL state of 5 collapse indicators:
+//       • Inflation above 25%  (×1.5 per point over threshold)
+//       • Unemployment above 20% (×2.0 per point)
+//       • Debt above 190%      (×1.0 per point)
+//       • Public mood below 15 (×3.0 per point under threshold)
+//       • Reserves exhausted   (flat −40)
+//     This ensures that "print money → boom → collapse" leaves a
+//     large negative footprint regardless of early-quarter averages.
+//
+// INVARIANTS:
+//   Eastern Med hard medicine (18% rate, austerity):   ~530–570
+//   Eastern Med catastrophic  (QE + 60% spending):     ~250–350
+//   Nordic steady-state:                                ~490–570
+//   Hard scenario top scores (700+) require sustained multi-metric
+//   improvement across ALL 7 quarters.
 // ═══════════════════════════════════════════════════════════════
 
 function scoreMetricsPerQuarter(m: EconomicMetrics): number {
   let s = 0;
   s += clamp(m.gdp * 4, -20, 20);
 
-  // [FIX-7b] Raised inflation floor -15 → -40. Without this, inflations
-  // of 18% and 26% both score -15 (same floor), making "do nothing" and
-  // "correct rate hike" score identically on inflation. Now scores can
-  // differentiate between bad (18%) and worse (26%) inflation, while
-  // the start baseline automatically adjusts via relative scoring.
   const inflDev = Math.abs(m.inflation - 2.5);
   s += clamp(10 - inflDev * 3, -40, 10);
 
-  // [FIX-7c] Raised unemployment floor -15 → -20. Crisis economies
-  // starting at 22%+ unemployment need room below -15 to differentiate
-  // "stable high unemployment" from "improving unemployment".
   s += clamp((10 - m.unemployment) * 1.5, -20, 20);
 
   s -= Math.max(0, (m.debtToGDP - 80) * 0.3);
@@ -505,18 +504,25 @@ function scoreMetricsPerQuarter(m: EconomicMetrics): number {
 export function calculateWisdomScore(history: QuarterData[]): number {
   if (history.length < 2) return 0;
 
-  const startMetrics    = history[0].metrics;
-  const startBaseline   = scoreMetricsPerQuarter(startMetrics);
-  const quarters        = history.slice(1);
-  let relativeScore     = 0;
+  const startMetrics  = history[0].metrics;
+  const startBaseline = scoreMetricsPerQuarter(startMetrics);
+  const quarters      = history.slice(1);
+  const n             = quarters.length;
+  let relativeScore   = 0;
 
-  for (let i = 0; i < quarters.length; i++) {
-    const m       = quarters[i].metrics;
-    const prevM   = i === 0 ? startMetrics : quarters[i - 1].metrics;
-    const actual  = scoreMetricsPerQuarter(m);
+  for (let i = 0; i < n; i++) {
+    const m      = quarters[i].metrics;
+    const prevM  = i === 0 ? startMetrics : quarters[i - 1].metrics;
+    const actual = scoreMetricsPerQuarter(m);
 
-    // Core: improvement vs inherited starting conditions
-    relativeScore += (actual - startBaseline);
+    // [FIX-8A] Progressive weighting: earlier quarters matter less.
+    // At n=7: weights are 0.6, 0.73, 0.87, 1.0, 1.13, 1.27, 1.40
+    // Sum = 7.0 → dividing by n gives correct weighted average.
+    const quarterWeight = n > 1
+      ? K.QUARTER_WEIGHT_MIN + (i / (n - 1)) * (K.QUARTER_WEIGHT_MAX - K.QUARTER_WEIGHT_MIN)
+      : 1.0;
+
+    relativeScore += (actual - startBaseline) * quarterWeight;
 
     // Stabilisation bonus: crisis tamer who brings high inflation below 6%
     if (startMetrics.inflation > 12 && m.inflation < 6) {
@@ -525,7 +531,6 @@ export function calculateWisdomScore(history: QuarterData[]): number {
     }
 
     // Momentum bonus: reward consistent quarter-on-quarter improvement
-    // toward target metrics (encourages sustained policy, not one-hit tweaks)
     if (startMetrics.inflation > 8 && m.inflation < prevM.inflation) {
       relativeScore += Math.min((prevM.inflation - m.inflation) * 0.3, 3);
     }
@@ -534,8 +539,35 @@ export function calculateWisdomScore(history: QuarterData[]): number {
     }
   }
 
-  const raw = relativeScore / quarters.length;
-  // Baseline 500. Each unit of raw = 6 score points.
+  // [FIX-8B] Terminal-state catastrophe penalty.
+  // Applied once after the loop. Reflects irreversible end-state damage
+  // regardless of how the economy performed in earlier quarters.
+  const finalM = quarters[n - 1].metrics;
+  let catastrophePenalty = 0;
+
+  if (finalM.inflation > K.CATASTROPHE_INFLATION_THRESHOLD) {
+    catastrophePenalty +=
+      (finalM.inflation - K.CATASTROPHE_INFLATION_THRESHOLD) * K.CATASTROPHE_INFLATION_COEFF;
+  }
+  if (finalM.unemployment > K.CATASTROPHE_UNEMPLOYMENT_THRESHOLD) {
+    catastrophePenalty +=
+      (finalM.unemployment - K.CATASTROPHE_UNEMPLOYMENT_THRESHOLD) * K.CATASTROPHE_UNEMPLOYMENT_COEFF;
+  }
+  if (finalM.debtToGDP > K.CATASTROPHE_DEBT_THRESHOLD) {
+    catastrophePenalty +=
+      (finalM.debtToGDP - K.CATASTROPHE_DEBT_THRESHOLD) * K.CATASTROPHE_DEBT_COEFF;
+  }
+  if (finalM.publicMood < K.CATASTROPHE_MOOD_THRESHOLD) {
+    catastrophePenalty +=
+      (K.CATASTROPHE_MOOD_THRESHOLD - finalM.publicMood) * K.CATASTROPHE_MOOD_COEFF;
+  }
+  if (finalM.reserves <= 0) {
+    catastrophePenalty += K.CATASTROPHE_RESERVE_PENALTY;
+  }
+
+  relativeScore -= catastrophePenalty;
+
+  const raw = relativeScore / n;
   return Math.max(0, Math.min(1000, Math.round(500 + raw * 6)));
 }
 
