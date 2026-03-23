@@ -411,7 +411,7 @@ export const AIHintSystem: React.FC<Props> = (props) => {
                 </div>
               </>
             )}
-          </div>
+          </div>j
         </div>
 
         <div className="ai-messages">
