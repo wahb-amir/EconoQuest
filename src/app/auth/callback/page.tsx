@@ -17,9 +17,6 @@ export default function AuthCallbackPage() {
       const accessToken  = params.get("access_token");
       const refreshToken = params.get("refresh_token");
 
-      console.log("[callback] accessToken found:", !!accessToken);
-      console.log("[callback] refreshToken found:", !!refreshToken);
-
       if (!accessToken || !refreshToken) {
         // check for PKCE code flow
         const searchParams = new URLSearchParams(window.location.search);
@@ -39,7 +36,7 @@ export default function AuthCallbackPage() {
         }
 
         setStatus("No tokens found");
-        setTimeout(() => router.push("/login?error=no_tokens"), 2000);
+        setTimeout(() => router.push("/login?error=no_tokens"), 200);
         return;
       }
 
@@ -56,8 +53,6 @@ export default function AuthCallbackPage() {
             refresh_token: refreshToken,
           }),
         });
-
-        console.log("[callback] set-session status:", res.status);
 
         if (res.ok) {
           setStatus("Success — redirecting...");
