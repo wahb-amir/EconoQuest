@@ -440,7 +440,7 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
         <div className="eq-nav-links">
           <div className="eq-nav-desktop">
             <a href="#features" className="eq-nav-link">Features</a>
-            <a href="#rankings" className="eq-nav-link">Rankings</a>
+            <a href="/leaderboard" className="eq-nav-link">Rankings</a>
           </div>
           <button className="eq-btn-primary" onClick={onStart}>Enter Platform →</button>
         </div>
