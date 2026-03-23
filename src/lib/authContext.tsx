@@ -14,27 +14,32 @@ import {
 const AUTH_BASE = "/api/auth";
 
 interface User {
-  id:       string;
-  email:    string;
+  id: string;
+  email: string;
   username: string;
 }
 
 interface AuthContextType {
-  user:            User | null;
-  isLoading:       boolean;
+  user: User | null;
+  isLoading: boolean;
   isAuthenticated: boolean;
-  login:           (email: string, password: string) => Promise<void>;
-  register:        (email: string, password: string, username?: string) => Promise<void>;
-  logout:          () => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  register: (
+    email: string,
+    password: string,
+    username?: string,
+  ) => Promise<void>;
+  logout: () => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   loginWithGithub: () => Promise<void>;
-  getToken:        () => Promise<string | null>;
+  getToken: () => Promise<string | null>;
+  fetchMe: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user,      setUser]      = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -61,10 +66,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await fetch(`${AUTH_BASE}/login`, {
-      method:      "POST",
+      method: "POST",
       credentials: "include",
-      headers:     { "Content-Type": "application/json" },
-      body:        JSON.stringify({ email, password }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
     });
 
     if (!res.ok) {
@@ -76,43 +81,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user);
   }, []);
 
-  const register = useCallback(async (
-    email:    string,
-    password: string,
-    username?: string
-  ) => {
-    const res = await fetch(`${AUTH_BASE}/register`, {
-      method:      "POST",
-      credentials: "include",
-      headers:     { "Content-Type": "application/json" },
-      body:        JSON.stringify({ email, password, username }),
-    });
+  const register = useCallback(
+    async (email: string, password: string, username?: string) => {
+      const res = await fetch(`${AUTH_BASE}/register`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, username }),
+      });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error((err as any).detail ?? "Registration failed");
-    }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as any).detail ?? "Registration failed");
+      }
 
-    const data = await res.json();
-    if (data.user) setUser(data.user);
-  }, []);
+      const data = await res.json();
+      if (data.user) setUser(data.user);
+    },
+    [],
+  );
 
   const logout = useCallback(async () => {
     await fetch(`${AUTH_BASE}/logout`, {
-      method:      "POST",
+      method: "POST",
       credentials: "include",
     });
     setUser(null);
   }, []);
 
   const loginWithGoogle = useCallback(async () => {
-    const res  = await fetch(`${AUTH_BASE}/google`, { credentials: "include" });
+    const res = await fetch(`${AUTH_BASE}/google`, { credentials: "include" });
     const data = await res.json();
     window.location.href = data.url;
   }, []);
 
   const loginWithGithub = useCallback(async () => {
-    const res  = await fetch(`${AUTH_BASE}/github`, { credentials: "include" });
+    const res = await fetch(`${AUTH_BASE}/github`, { credentials: "include" });
     const data = await res.json();
     window.location.href = data.url;
   }, []);
@@ -132,17 +136,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      isLoading,
-      isAuthenticated: !!user,
-      login,
-      register,
-      logout,
-      loginWithGoogle,
-      loginWithGithub,
-      getToken,
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        isAuthenticated: !!user,
+        login,
+        register,
+        logout,
+        loginWithGoogle,
+        loginWithGithub,
+        getToken,
+        fetchMe,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

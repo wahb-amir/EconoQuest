@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
+import { useAuth } from "@/hooks/useAuth";
 export default function AuthCallbackPage() {
   const router = useRouter();
   const [status, setStatus] = useState("Reading tokens...");
-
+  const { fetchMe } = useAuth();
   useEffect(() => {
     async function handleCallback() {
       await new Promise(r => setTimeout(r, 100));
@@ -56,6 +56,7 @@ export default function AuthCallbackPage() {
 
         if (res.ok) {
           setStatus("Success — redirecting...");
+          await fetchMe();
           router.push("/setup");
         } else {
           setStatus("Session failed");
