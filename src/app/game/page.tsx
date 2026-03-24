@@ -145,7 +145,6 @@ function detectFlags(m: EconomicMetrics, printing: boolean): string[] {
   return f;
 }
 
-// Converts game state to the flat object the summary-service expects
 function buildRoundState(
   round: number,
   metrics: EconomicMetrics,
@@ -174,8 +173,6 @@ function buildRoundState(
   };
 }
 
-// Fire-and-forget — sends current round to proxy → summary-service → Supabase
-// Does NOT block the UI. Failures are silent.
 function fireRoundSummary(
   sessionId: string,
   state: Record<string, unknown>,
@@ -185,9 +182,7 @@ function fireRoundSummary(
     credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ session_id: sessionId, state }),
-  }).catch(() => {
-    // background — silent fail, game continues
-  });
+  }).catch(() => {});
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -195,8 +190,6 @@ function fireRoundSummary(
 export default function GamePage() {
   const router = useRouter();
 
-  // stable session id for this entire game run
-  // used to group all round summaries together in Supabase
   const sessionIdRef = useRef<string>("");
 
   useEffect(() => {
@@ -241,12 +234,9 @@ export default function GamePage() {
   const handleNextQuarter = () => {
     if (!metrics || gameOver) return;
 
-    // ── Step 1: snapshot CURRENT round state and fire to proxy (background) ──
-    // This captures what the user decided THIS round before we calculate outcomes
     const currentState = buildRoundState(quarter, metrics, policy);
     fireRoundSummary(sessionIdRef.current, currentState);
 
-    // ── Step 2: calculate next quarter outcomes ──
     const nextEvent =
       GLOBAL_EVENTS[Math.floor(Math.random() * GLOBAL_EVENTS.length)];
     const nextMetrics = calculateNextQuarter(
@@ -273,7 +263,6 @@ export default function GamePage() {
     setFlags(detectFlags(nextMetrics, policy.moneyPrinting));
 
     if (nextQ >= 8) {
-      // fire final round summary too before ending
       const finalState = buildRoundState(nextQ, nextMetrics, policy);
       fireRoundSummary(sessionIdRef.current, finalState);
       setGameOver(true);
@@ -317,7 +306,6 @@ export default function GamePage() {
   const totalQuarters = 8;
   const score = calculateWisdomScore(history);
 
-  // final state snapshot for the summary screen
   const finalStateSnapshot = buildRoundState(quarter, metrics, policy);
 
   return (
@@ -390,7 +378,11 @@ export default function GamePage() {
               </div>
             </div>
           )}
-          {activeTab === "leaderboard" && <LeaderboardPanel />}
+
+          {/* ── Hall of Fame tab — pass current nation to filter it out ── */}
+          {activeTab === "leaderboard" && (
+            <LeaderboardPanel currentNation={country.name} />
+          )}
         </div>
 
         {/* Mobile sticky bar */}
