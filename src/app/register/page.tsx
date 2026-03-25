@@ -399,30 +399,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div className="border border-[#1c1409]/20 bg-[#e9e0d2]">
-              <div className="flex justify-between border-b border-[#1c1409]/20 px-4 py-3 text-[8px] font-medium uppercase tracking-[0.18em] text-[#bf3509]">
-                <span>Hall of Fame</span>
-                <span>This Week</span>
-              </div>
-              {[
-                { rank: "01", name: "The Balanced Steward", score: "91pts" },
-                { rank: "02", name: "The Tech Visionary", score: "88pts" },
-                { rank: "03", name: "The Inflation Hawk", score: "84pts" },
-                { rank: "04", name: "The Debt Architect", score: "79pts" },
-                { rank: "05", name: "The Isolationist", score: "74pts" },
-              ].map((row, i) => (
-                <div
-                  key={row.rank}
-                  className="grid grid-cols-[28px_1fr_auto] items-center gap-2 border-b border-[#1c1409]/13 px-4 py-2.5 text-[11px] last:border-b-0"
-                >
-                  <span className={i === 0 ? "text-[#bf3509] font-medium" : "text-[#1c1409]/50"}>
-                    {row.rank}
-                  </span>
-                  <span className="text-[#1c1409]">{row.name}</span>
-                  <span className="text-right font-medium text-[#bf3509]">{row.score}</span>
-                </div>
-              ))}
-            </div>
+           
           </div>
         </div>
       </div>

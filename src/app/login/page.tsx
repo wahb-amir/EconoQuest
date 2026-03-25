@@ -172,34 +172,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-px border border-[#1c1409]/20 bg-[#1c1409]/20">
-              <div className="bg-[#f2ebe0] p-5">
-                <p className="mb-1.5 text-[8px] uppercase tracking-[0.16em] text-[#1c1409]/50">
-                  Nations Simulated
-                </p>
-                <p className="font-['Bebas_Neue'] text-[28px] tracking-[0.03em] text-[#1c1409]">
-                  12<span className="text-[#bf3509]">,4</span>81
-                </p>
-              </div>
-
-              <div className="bg-[#f2ebe0] p-5">
-                <p className="mb-1.5 text-[8px] uppercase tracking-[0.16em] text-[#1c1409]/50">
-                  Rounds Played
-                </p>
-                <p className="font-['Bebas_Neue'] text-[28px] tracking-[0.03em] text-[#1c1409]">
-                  87<span className="text-[#bf3509]">K</span>+
-                </p>
-              </div>
-
-              <div className="bg-[#f2ebe0] p-5">
-                <p className="mb-1.5 text-[8px] uppercase tracking-[0.16em] text-[#1c1409]/50">
-                  Avg Session
-                </p>
-                <p className="font-['Bebas_Neue'] text-[28px] tracking-[0.03em] text-[#1c1409]">
-                  22<span className="text-[#bf3509]">m</span>
-                </p>
-              </div>
-            </div>
+           
           </div>
 
           <div
