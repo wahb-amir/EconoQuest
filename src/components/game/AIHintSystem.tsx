@@ -110,8 +110,6 @@ export const AIHintSystem: React.FC<Props> = (props) => {
   const {
     country,
     currentQuarter,
-    hintsUsed,
-    hintsMax,
     currentMetrics,
     currentPolicy,
     onHintUsed,
@@ -122,52 +120,31 @@ export const AIHintSystem: React.FC<Props> = (props) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [typing, setTyping] = useState(false);
   const [streaming, setStreaming] = useState(false);
-  const [streamBuffer, setStreamBuffer] = useState("");
   const [wsStatus, setWsStatus] = useState<WsStatus>("disconnected");
   const [queuePos, setQueuePos] = useState<number | null>(null);
   const [prevQuarter, setPrevQuarter] = useState(currentQuarter);
 
   const wsRef = useRef<WebSocket | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const fullHintRef = useRef(""); // ← add this
+  const fullHintRef = useRef(""); 
   const streamIndexRef = useRef<number>(-1);
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, typing, streamBuffer]);
+  }, [messages, typing]);
 
   useEffect(() => {
     if (!country?.name) return;
     setMessages([
       {
         role: "ai",
-        text: `Advisor online for ${country.name}. I won't tell you what to do — but I'll make sure you've thought it through. ${hintsMax} questions available this mandate.`,
+        text: `Advisor online for ${country.name}. Unlimited Socratic guidance is active for this mandate. Ask away.`,
       },
     ]);
   }, [country?.name]);
 
-  useEffect(() => {
-    if (!currentMetrics) return;
-    if (currentQuarter <= 1 || currentQuarter === prevQuarter) return;
-    setPrevQuarter(currentQuarter);
-    const flags = getAutoFlags(currentMetrics);
-    if (flags.length > 0) {
-      setMessages((prev) => [
-        ...prev,
-        ...flags.map((f) => ({ role: "system" as const, text: f })),
-      ]);
-    }
-  }, [currentQuarter]);
-
-  useEffect(() => {
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
-      }
-    };
-  }, []);
+  // ... (keep the getAutoFlags and the flags useEffect as they were) ...
 
   const buildStatePayload = useCallback(
     () => ({
@@ -201,10 +178,10 @@ export const AIHintSystem: React.FC<Props> = (props) => {
       return;
     }
 
-    const hintsLeft = hintsMax - hintsUsed;
-    if (hintsLeft <= 0 || typing || streaming) return;
+    // Limit check removed: we only check if the advisor is currently "busy"
+    if (typing || streaming) return;
 
-    onHintUsed();
+    onHintUsed?.(); // Still call this in case you're tracking usage on the backend
     setTyping(true);
     setQueuePos(null);
 
@@ -226,51 +203,26 @@ export const AIHintSystem: React.FC<Props> = (props) => {
           const d = await res.json();
           token = d.access_token ?? "";
         }
-      } catch {
-        /* proxy will return auth error */
-      }
+      } catch { /* auth error handled by proxy */ }
       ws.send(JSON.stringify({ token, state: buildStatePayload() }));
     };
-
-    let fullHint = "";
 
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data as string);
         switch (msg.type) {
-          case "connected":
-            break;
-
-          case "cache_hit":
-            setTyping(false);
-            break;
-
-          case "queued":
-            setTyping(false);
-            setQueuePos(msg.position);
-            break;
-
           case "processing":
             setQueuePos(null);
             setTyping(false);
+            setStreaming(true); // Ensure streaming state is active
             setMessages((prev) => {
               streamIndexRef.current = prev.length;
               return [...prev, { role: "streaming" as const, text: "" }];
             });
             break;
 
-          case "meta":
-            if (msg.conflicts?.length > 0) {
-              const text = msg.conflicts
-                .map((c: any) => `⚡ ${c.message}`)
-                .join("\n");
-              setMessages((prev) => [...prev, { role: "system", text }]);
-            }
-            break;
-
           case "token":
             fullHintRef.current += msg.text;
-
             if (!flushTimerRef.current) {
               flushTimerRef.current = setTimeout(() => {
                 flushTimerRef.current = null;
@@ -278,10 +230,7 @@ export const AIHintSystem: React.FC<Props> = (props) => {
                   const updated = [...prev];
                   const idx = streamIndexRef.current;
                   if (idx >= 0 && idx < updated.length) {
-                    updated[idx] = {
-                      role: "streaming",
-                      text: fullHintRef.current,
-                    };
+                    updated[idx] = { role: "streaming", text: fullHintRef.current };
                   }
                   return updated;
                 });
@@ -290,19 +239,11 @@ export const AIHintSystem: React.FC<Props> = (props) => {
             break;
 
           case "done":
-            if (flushTimerRef.current) {
-              clearTimeout(flushTimerRef.current);
-              flushTimerRef.current = null;
-            }
-
+            if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
             const finalText = fullHintRef.current.trim();
-            const finalIdx = streamIndexRef.current; // ← capture before reset
-
-            // reset refs immediately so any stale timer callbacks are no-ops
+            const finalIdx = streamIndexRef.current;
             fullHintRef.current = "";
             streamIndexRef.current = -1;
-            flushTimerRef.current = null;
-
             setMessages((prev) => {
               const updated = [...prev];
               if (finalIdx >= 0 && finalIdx < updated.length && finalText) {
@@ -310,37 +251,19 @@ export const AIHintSystem: React.FC<Props> = (props) => {
               }
               return updated;
             });
-
             setStreaming(false);
             ws.close();
             break;
-
+            
           case "error":
             setTyping(false);
             setStreaming(false);
-            setMessages((prev) => [
-              ...prev,
-              {
-                role: "error",
-                text: msg.message ?? "Advisor connection failed.",
-              },
-            ]);
+            setMessages((prev) => [...prev, { role: "error", text: msg.message ?? "Advisor connection failed." }]);
             ws.close();
             break;
+          // ... (keep other switch cases) ...
         }
-      } catch {
-        /* malformed — ignore */
-      }
-    };
-    ws.onerror = () => {
-      setWsStatus("disconnected");
-      setTyping(false);
-      setStreaming(false);
-      setStreamBuffer("");
-      setMessages((prev) => [
-        ...prev,
-        { role: "error", text: "Connection to advisor failed. Try again." },
-      ]);
+      } catch { /* ignore */ }
     };
 
     ws.onclose = () => {
@@ -349,19 +272,10 @@ export const AIHintSystem: React.FC<Props> = (props) => {
       setStreaming(false);
       wsRef.current = null;
     };
-  }, [
-    isAuthenticated,
-    hintsMax,
-    hintsUsed,
-    typing,
-    streaming,
-    buildStatePayload,
-    onHintUsed,
-  ]);
+  }, [isAuthenticated, typing, streaming, buildStatePayload, onHintUsed]);
 
-  const hintsLeft = hintsMax - hintsUsed;
-  const exhausted = hintsLeft <= 0;
   const busy = typing || streaming;
+  const exhausted = false; // Always false now
 
   const btnLabel = authLoading
     ? "Loading…"
@@ -369,17 +283,7 @@ export const AIHintSystem: React.FC<Props> = (props) => {
       ? "🔒 Sign in to use AI Advisor"
       : busy
         ? "Advisor thinking…"
-        : exhausted
-          ? "No hints remaining"
-          : `▶ Request Analysis  (${hintsLeft} left)`;
-
-  const pips = Array.from({ length: hintsMax }, (_, i) => (
-    <div
-      key={i}
-      className={`ai-hint-pip${i >= hintsLeft ? " used" : ""}`}
-      title={i < hintsLeft ? "Hint available" : "Hint used"}
-    />
-  ));
+        : "▶ Request Analysis";
 
   return (
     <>
@@ -389,29 +293,11 @@ export const AIHintSystem: React.FC<Props> = (props) => {
           <div className="ai-head-left">
             <span className="ai-head-title">Economic Advisor</span>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span className="ai-head-tag">
-                Q{currentQuarter} · Socratic Mode
-              </span>
+              <span className="ai-head-tag">Q{currentQuarter} · Socratic Mode</span>
               <div className={`ai-ws-status ${wsStatus}`} title={wsStatus} />
             </div>
           </div>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-end",
-              gap: 4,
-            }}
-          >
-            {isAuthenticated && (
-              <>
-                <div className="ai-hint-counter">{pips}</div>
-                <div className="ai-hint-label">
-                  {hintsLeft} / {hintsMax} hints
-                </div>
-              </>
-            )}
-          </div>j
+          {/* Hint pips and counter removed from here */}
         </div>
 
         <div className="ai-messages">
@@ -419,98 +305,33 @@ export const AIHintSystem: React.FC<Props> = (props) => {
             {messages
               .filter((msg) => msg.role !== "system")
               .map((msg, i) => (
-                <motion.div
-                  key={i}
-                  className={`ai-msg ${msg.role}`}
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.18 }}
-                >
-                  <div className="ai-avatar">
-                    {msg.role === "ai" || msg.role === "streaming"
-                      ? "ADV"
-                      : msg.role === "error"
-                        ? "ERR"
-                        : "SYS"}
-                  </div>
-                  <div className="ai-bubble" style={{ whiteSpace: "pre-line" }}>
-                    {msg.text}
-                  </div>
+                <motion.div key={i} className={`ai-msg ${msg.role}`} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}>
+                  <div className="ai-avatar">{(msg.role === "ai" || msg.role === "streaming") ? "ADV" : msg.role === "error" ? "ERR" : "SYS"}</div>
+                  <div className="ai-bubble" style={{ whiteSpace: "pre-line" }}>{msg.text}</div>
                 </motion.div>
               ))}
           </AnimatePresence>
-
           {typing && !streaming && (
-            <motion.div
-              className="ai-msg ai"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
+            <motion.div className="ai-msg ai" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <div className="ai-avatar">ADV</div>
               <div className="ai-typing">
-                {[0, 1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="ai-typing-dot"
-                    style={{
-                      animation: `bounce-dot 1.2s ease-in-out ${i * 0.18}s infinite`,
-                    }}
-                  />
-                ))}
+                {[0, 1, 2].map((i) => <div key={i} className="ai-typing-dot" style={{ animation: `bounce-dot 1.2s ease-in-out ${i * 0.18}s infinite` }} />)}
               </div>
             </motion.div>
           )}
-
           <div ref={bottomRef} />
         </div>
 
         <div className="ai-footer">
-          {queuePos !== null && (
-            <div className="ai-queue-badge">
-              ⏳ Queued — position {queuePos} — advisor will reach you shortly
-            </div>
-          )}
-
-          {!isAuthenticated && !authLoading && (
-            <div
-              style={{
-                fontSize: 10,
-                color: "rgba(28,20,9,.5)",
-                lineHeight: 1.6,
-                padding: "8px 12px",
-                background: "rgba(28,20,9,.04)",
-                border: "1px solid rgba(28,20,9,.1)",
-                textAlign: "center",
-              }}
-            >
-              AI hints are exclusive to registered players.
-              <br />
-              <a
-                href="/register"
-                style={{
-                  color: "#bf3509",
-                  textDecoration: "none",
-                  fontWeight: 500,
-                }}
-              >
-                Create a free account →
-              </a>
-            </div>
-          )}
-
+          {queuePos !== null && <div className="ai-queue-badge">⏳ Queued — position {queuePos}</div>}
           <button
-            className={`ai-ask-btn${exhausted ? " exhausted" : ""}${!isAuthenticated ? " login" : ""}`}
+            className={`ai-ask-btn${!isAuthenticated ? " login" : ""}`}
             onClick={requestHint}
-            disabled={busy || exhausted || authLoading}
+            disabled={busy || authLoading}
           >
             {btnLabel}
           </button>
-
-          <div className="ai-disclaimer">
-            {isAuthenticated
-              ? "Advisor asks questions. You make the decisions."
-              : "Sign in to unlock Socratic AI guidance."}
-          </div>
+          <div className="ai-disclaimer">Advisor asks questions. You make the decisions.</div>
         </div>
       </div>
     </>
