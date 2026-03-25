@@ -12,6 +12,7 @@ import {
   CountryTemplate,
 } from "@/lib/simulation-engine";
 
+
 import { GameHeader } from "@/components/game/panels/GameHeader";
 import { EventBar } from "@/components/game/panels/Eventbar";
 import { FlagsBar } from "@/components/game/panels/FlagBar";
