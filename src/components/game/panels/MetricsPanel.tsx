@@ -1921,7 +1921,7 @@ export function MetricsPanel({
               fontSize: 9,
               letterSpacing: "0.12em",
               textTransform: "uppercase",
-              color: "rgba(28,20,9,0.4)",
+              color: "rgba(28,20,9)",
             }}
           >
             Each metric is clickable — tap any card to learn what it means

@@ -517,10 +517,6 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
           </blockquote>
           <div className="eq-attribution">
             <div className="eq-attr-line" />
-            <div>
-              <div className="eq-attr-name">Dr. Elena Volkov</div>
-              <div className="eq-attr-role">Head of Macro, Global Institute</div>
-            </div>
           </div>
         </div>
         <div className="eq-checklist">
