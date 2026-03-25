@@ -72,725 +72,459 @@ interface MetricEdu {
 
 const EDU: Record<MetricKey, MetricEdu> = {
   gdp: {
-    title: "GDP Growth Rate",
-    symbol: "GDP",
-    tagline: "The economy's quarterly pulse",
-    unit: "% growth",
-    valueMin: -15,
-    valueMax: 15,
-    higherIsBetter: true,
-    definition:
-      "GDP Growth Rate measures how fast the economy is expanding (or contracting) this quarter relative to trend. A +2.1% reading means the economy is growing at 2.1% above its neutral pace. Negative values mean the economy is shrinking — recession territory. In this simulation it is bounded between −15% and +15%.",
-    whyItMatters:
-      "GDP growth drives hiring, wages, and government revenue. Sustained growth above 2% creates a virtuous cycle: more jobs → more spending → more production. Negative GDP triggers rising unemployment, falling tax receipts, and deteriorating public services.",
-    howCalculated:
-      "ΔGdp = spendingEffect − taxDrag − interestDrag + rdGdpBoost ± eventShock. Spending above 20% of GDP boosts growth. Tax rates above 28% create drag. High interest rates dampen investment. R&D investment compounds productivity over time.",
+    title: "GDP Growth Rate", symbol: "GDP", tagline: "The economy's quarterly pulse", unit: "% growth (range: −15 to +15)",
+    definition: "GDP Growth Rate measures how fast the economy is expanding (or contracting) this quarter relative to trend. A +2.1% reading means the economy is growing at 2.1% above its neutral pace. Negative values mean the economy is shrinking — recession territory. In this simulation it is bounded between −15% and +15%.",
+    whyItMatters: "GDP growth drives hiring, wages, and government revenue. Sustained growth above 2% creates a virtuous cycle: more jobs → more spending → more production. Negative GDP triggers rising unemployment, falling tax receipts, and deteriorating public services.",
+    howCalculated: "In the engine: ΔGdp = spendingEffect − taxDrag − interestDrag + rdGdpBoost ± eventShock. Spending above 20% of GDP boosts growth. Tax rates above 28% create drag. High interest rates dampen investment. R&D investment compounds productivity over time.",
     healthRanges: [
       {
-        label: "Deep Recession",
-        color: "#dc2626",
-        range: "< −3%",
-        min: -15,
-        max: -3,
-      },
-      {
-        label: "Recession",
-        color: "#ef4444",
-        range: "−3% to 0%",
-        min: -3,
-        max: 0,
-      },
-      {
-        label: "Stagnation",
-        color: "#f59e0b",
-        range: "0–1.5%",
+        label: "Deep Recession", color: "#9b2c2c", range: "< −3%",
         min: 0,
-        max: 1.5,
+        max: 0
       },
-      { label: "Healthy", color: "#22c55e", range: "1.5–4%", min: 1.5, max: 4 },
-      { label: "Boom", color: "#3b82f6", range: "4–7%", min: 4, max: 7 },
       {
-        label: "Overheating",
-        color: "#a855f7",
-        range: "> 7%",
-        min: 7,
-        max: 15,
+        label: "Recession", color: "#e53e3e", range: "−3% to 0%",
+        min: 0,
+        max: 0
+      },
+      {
+        label: "Stagnation", color: "#dd6b20", range: "0–1.5%",
+        min: 0,
+        max: 0
+      },
+      {
+        label: "Healthy Growth", color: "#38a169", range: "1.5–4%",
+        min: 0,
+        max: 0
+      },
+      {
+        label: "Boom", color: "#3182ce", range: "4–7%",
+        min: 0,
+        max: 0
+      },
+      {
+        label: "Overheating", color: "#805ad5", range: "> 7%",
+        min: 0,
+        max: 0
       },
     ],
     policyEffects: [
-      {
-        policy: "Low taxes (near 28%)",
-        effect: "positive",
-        description:
-          "Near-optimal tax rate stimulates private spending and business investment",
-      },
-      {
-        policy: "High interest rates",
-        effect: "negative",
-        description:
-          "Raises borrowing costs, dragging down investment and consumer spending",
-      },
-      {
-        policy: "High government spending",
-        effect: "positive",
-        description:
-          "Direct fiscal stimulus — multiplied 0.35× through the spending multiplier",
-      },
-      {
-        policy: "High tariffs (>35%)",
-        effect: "negative",
-        description:
-          "Triggers trade-war retaliation, shrinking export markets and GDP",
-      },
+      { policy: "Low taxes (near 28%)", effect: "positive", description: "Near-optimal tax rate stimulates private spending and business investment" },
+      { policy: "High interest rates", effect: "negative", description: "Raises borrowing costs, dragging down investment and consumer spending" },
+      { policy: "High government spending", effect: "positive", description: "Direct fiscal stimulus — multiplied 0.35× through the spending multiplier" },
+      { policy: "High tariffs (>35%)", effect: "negative", description: "Triggers trade-war retaliation, shrinking export markets and GDP" },
     ],
-    realWorldExample:
-      "US GDP growth collapsed to −32.9% annualised in Q2 2020 (COVID lockdown) — the sharpest contraction in modern history. It rebounded +33.8% the next quarter as stimulus kicked in. The simulation's −15/+15 range represents a single quarter's growth rate, not annualised figures.",
-    funFact:
-      "China sustained GDP growth above 10% for nearly 30 consecutive years (1980–2010), lifting 800 million people out of poverty. No economy that large has ever grown that fast for that long.",
-    leaderboardImpact:
-      "GDP growth above +3% per quarter boosts your Wisdom Score significantly. Consecutive quarters of growth create a compounding bonus. Negative GDP (recession) imposes penalties that worsen with each additional quarter below zero.",
+    realWorldExample: "US GDP growth collapsed to −32.9% annualised in Q2 2020 (COVID lockdown) — the sharpest contraction in modern history. It rebounded +33.8% the next quarter as stimulus kicked in. The simulation's −15/+15 range represents a single quarter's growth rate, not annualised figures.",
+    funFact: "China sustained GDP growth above 10% for nearly 30 consecutive years (1980–2010), lifting 800 million people out of poverty. No economy that large has ever grown that fast for that long — a feat the simulation's engine treats as the 'overheating' zone.",
+    leaderboardImpact: "GDP growth above +3% per quarter boosts your Wisdom Score significantly. Consecutive quarters of growth create a compounding bonus. Negative GDP (recession) imposes penalties that worsen with each additional quarter below zero.",
+    valueMin: 0,
+    valueMax: 0,
+    higherIsBetter: false
   },
   inflation: {
-    title: "Inflation Rate",
-    symbol: "CPI",
-    tagline: "The silent tax on your citizens",
-    unit: "% per year",
-    valueMin: -2,
-    valueMax: 30,
-    higherIsBetter: false,
-    definition:
-      "Inflation measures how fast the general price level of goods and services rises over time. At 5% inflation, something costing $100 today will cost $105 next year. It's the rate at which your currency loses purchasing power.",
-    whyItMatters:
-      "Moderate inflation (2–3%) encourages spending and investment. But high inflation erodes savings, punishes fixed-income earners, and destroys public trust. Hyperinflation above 50% monthly has toppled governments throughout history.",
-    howCalculated:
-      "Inflation is driven by money supply growth, demand outpacing supply, and import costs. Printing money, high government spending, low interest rates, and currency weakness all push it higher.",
+    title: "Inflation Rate", symbol: "CPI %", tagline: "The silent tax on your citizens", unit: "% per year",
+    definition: "Inflation measures how fast the general price level of goods and services rises over time. At 5% inflation, something costing $100 today will cost $105 next year. It's the rate at which your currency loses purchasing power.",
+    whyItMatters: "Moderate inflation (2–3%) encourages spending and investment. But high inflation erodes savings, punishes fixed-income earners, and destroys public trust. Hyperinflation above 50% monthly has toppled governments throughout history.",
+    howCalculated: "Inflation is driven by money supply growth, demand outpacing supply, and import costs. Printing money, high government spending, low interest rates, and currency weakness all push it higher.",
     healthRanges: [
-      { label: "Deflation", color: "#3b82f6", range: "< 0%", min: -2, max: 0 },
-      { label: "Target", color: "#22c55e", range: "1–4%", min: 0, max: 4 },
-      { label: "Elevated", color: "#f59e0b", range: "4–8%", min: 4, max: 8 },
-      { label: "High", color: "#f97316", range: "8–15%", min: 8, max: 15 },
-      { label: "Crisis", color: "#dc2626", range: "> 15%", min: 15, max: 30 },
+      {
+        label: "Deflation", color: "#3182ce", range: "< 0%",
+        min: 0,
+        max: 0
+      },
+      {
+        label: "Target Zone", color: "#38a169", range: "1–4%",
+        min: 0,
+        max: 0
+      },
+      {
+        label: "Elevated", color: "#ecc94b", range: "4–8%",
+        min: 0,
+        max: 0
+      },
+      {
+        label: "High", color: "#dd6b20", range: "8–15%",
+        min: 0,
+        max: 0
+      },
+      {
+        label: "Crisis", color: "#e53e3e", range: "> 15%",
+        min: 0,
+        max: 0
+      },
     ],
     policyEffects: [
-      {
-        policy: "Raise interest rates",
-        effect: "positive",
-        description:
-          "Classic anti-inflation tool — makes borrowing expensive, cools spending",
-      },
-      {
-        policy: "Money printing",
-        effect: "negative",
-        description:
-          "Most direct inflation trigger — more money chasing same goods",
-      },
-      {
-        policy: "Cut spending",
-        effect: "positive",
-        description:
-          "Reduces demand-pull inflation by lowering government demand",
-      },
-      {
-        policy: "Currency strength",
-        effect: "positive",
-        description:
-          "Strong currency makes imports cheaper, lowering price pressure",
-      },
+      { policy: "Raise interest rates", effect: "positive", description: "Classic anti-inflation tool — makes borrowing expensive, cools spending" },
+      { policy: "Money printing", effect: "negative", description: "Most direct inflation trigger — more money chasing same goods" },
+      { policy: "Cut spending", effect: "positive", description: "Reduces demand-pull inflation by lowering government demand" },
+      { policy: "Currency strength", effect: "positive", description: "Strong currency makes imports cheaper, lowering price pressure" },
     ],
-    realWorldExample:
-      "Zimbabwe's 2008 hyperinflation reached 89.7 sextillion percent. Citizens needed wheelbarrows of cash to buy bread. Germany's 1923 Weimar hyperinflation destroyed the middle class and enabled the rise of Nazism.",
-    funFact:
-      "The US Federal Reserve officially targets 2% inflation — not 0%. A small, predictable inflation gives the central bank room to cut in a crisis and discourages hoarding cash instead of investing it.",
-    leaderboardImpact:
-      "Inflation above 8% triggers a penalty flag that compounds each quarter. Hyperinflation above 15% is one of the fastest ways to collapse your Wisdom Score.",
+    realWorldExample: "Zimbabwe's 2008 hyperinflation reached 89.7 sextillion percent. Citizens needed wheelbarrows of cash to buy bread. Germany's 1923 Weimar hyperinflation destroyed the middle class and enabled the rise of Nazism.",
+    funFact: "The US Federal Reserve officially targets 2% inflation — not 0%. A small, predictable inflation gives the central bank room to cut in a crisis and discourages hoarding cash instead of investing it.",
+    leaderboardImpact: "Inflation above 8% triggers a penalty flag that compounds each quarter. Hyperinflation above 15% is one of the fastest ways to collapse your Wisdom Score.",
+    valueMin: 0,
+    valueMax: 0,
+    higherIsBetter: false
   },
   unemployment: {
-    title: "Unemployment Rate",
-    symbol: "U-RATE",
-    tagline: "Idle hands cost more than wages",
-    unit: "% of workforce",
-    valueMin: 0,
-    valueMax: 30,
-    higherIsBetter: false,
-    definition:
-      "The unemployment rate measures the percentage of people in the labor force who are actively seeking work but cannot find it. It captures the human cost of economic underperformance — lost income, skills atrophy, and social strain.",
-    whyItMatters:
-      "Every percentage point represents millions without income. High unemployment strains public budgets, increases crime, and erodes public mood. Low unemployment drives wage growth and consumer spending.",
-    howCalculated:
-      "Unemployment responds to GDP growth, business confidence, interest rates, and wages. High interest rates slow hiring. Low growth shrinks labor demand. Your wage policies and business tax rates heavily influence this metric.",
+    title: "Unemployment Rate", symbol: "U-Rate", tagline: "Idle hands cost more than wages", unit: "% of workforce",
+    definition: "The unemployment rate measures the percentage of people in the labor force who are actively seeking work but cannot find it. It captures the human cost of economic underperformance — lost income, skills atrophy, and social strain.",
+    whyItMatters: "Every percentage point represents millions without income. High unemployment strains public budgets, increases crime, and erodes public mood. Low unemployment drives wage growth and consumer spending.",
+    howCalculated: "Unemployment responds to GDP growth, business confidence, interest rates, and wages. High interest rates slow hiring. Low growth shrinks labor demand. Your wage policies and business tax rates heavily influence this metric.",
     healthRanges: [
-      { label: "Overheated", color: "#a855f7", range: "< 3%", min: 0, max: 3 },
       {
-        label: "Full Employment",
-        color: "#22c55e",
-        range: "3–5%",
-        min: 3,
-        max: 5,
+        label: "Overheated", color: "#805ad5", range: "< 3%",
+        min: 0,
+        max: 0
       },
-      { label: "Moderate", color: "#f59e0b", range: "5–8%", min: 5, max: 8 },
-      { label: "High", color: "#f97316", range: "8–12%", min: 8, max: 12 },
-      { label: "Crisis", color: "#dc2626", range: "> 12%", min: 12, max: 30 },
+      {
+        label: "Full Employment", color: "#38a169", range: "3–5%",
+        min: 0,
+        max: 0
+      },
+      {
+        label: "Moderate", color: "#ecc94b", range: "5–8%",
+        min: 0,
+        max: 0
+      },
+      {
+        label: "High", color: "#dd6b20", range: "8–12%",
+        min: 0,
+        max: 0
+      },
+      {
+        label: "Crisis", color: "#e53e3e", range: "> 12%",
+        min: 0,
+        max: 0
+      },
     ],
     policyEffects: [
-      {
-        policy: "Low interest rates",
-        effect: "positive",
-        description:
-          "Cheap credit enables businesses to expand and hire more workers",
-      },
-      {
-        policy: "High R&D investment",
-        effect: "positive",
-        description: "Creates high-skilled jobs and drives sector growth",
-      },
-      {
-        policy: "High taxes on business",
-        effect: "negative",
-        description: "Squeezes margins, discourages hiring and expansion",
-      },
-      {
-        policy: "High government spending",
-        effect: "positive",
-        description:
-          "Public sector jobs and infrastructure contracts absorb labor",
-      },
+      { policy: "Low interest rates", effect: "positive", description: "Cheap credit enables businesses to expand and hire more workers" },
+      { policy: "High R&D investment", effect: "positive", description: "Creates high-skilled jobs and drives sector growth" },
+      { policy: "High taxes on business", effect: "negative", description: "Squeezes margins, discourages hiring and expansion" },
+      { policy: "High government spending", effect: "positive", description: "Public sector jobs and infrastructure contracts absorb labor" },
     ],
-    realWorldExample:
-      "US unemployment hit 24.9% in 1933 during the Great Depression. FDR's New Deal reduced it to 14.3% by 1937. Spain's youth unemployment surpassed 50% after the 2008 crisis — a 'lost generation' effect still visible today.",
-    funFact:
-      "Even at 'full employment', 3–4% unemployment exists naturally — people between jobs, or changing careers. Zero unemployment would actually signal labor market dysfunction, not success.",
-    leaderboardImpact:
-      "Unemployment above 20% triggers the 'Social Instability' flag, imposing escalating penalties on public mood and GDP growth each subsequent quarter.",
+    realWorldExample: "US unemployment hit 24.9% in 1933 during the Great Depression. FDR's New Deal reduced it to 14.3% by 1937. Spain's youth unemployment surpassed 50% after the 2008 crisis — a 'lost generation' effect still visible today.",
+    funFact: "Even at 'full employment', 3–4% unemployment exists naturally — people between jobs, or changing careers. Zero unemployment would actually signal labor market dysfunction, not success.",
+    leaderboardImpact: "Unemployment above 20% triggers the 'Social Instability' flag, imposing escalating penalties on your public mood and GDP growth each subsequent quarter.",
+    valueMin: 0,
+    valueMax: 0,
+    higherIsBetter: false
   },
   debtToGDP: {
-    title: "Debt-to-GDP Ratio",
-    symbol: "D/GDP",
-    tagline: "Your nation's mortgage vs. its income",
-    unit: "% of GDP",
-    valueMin: 0,
-    valueMax: 250,
-    higherIsBetter: false,
-    definition:
-      "The debt-to-GDP ratio compares a country's total government debt to the size of its economy. A ratio of 60% means the country owes 60% of everything it produces in a year. It's the primary measure of fiscal sustainability.",
-    whyItMatters:
-      "High debt means more budget goes to interest payments instead of schools and healthcare. Above certain thresholds, lenders demand higher rates, creating a debt spiral. Sovereign default triggers economic catastrophe.",
-    howCalculated:
-      "Debt grows when spending exceeds tax revenue. Debt-to-GDP rises when: spending > taxes, growth slows (shrinking the denominator), or interest compounds on existing debt.",
+    title: "Debt-to-GDP Ratio", symbol: "D/GDP", tagline: "Your nation's mortgage vs. its income", unit: "% of GDP",
+    definition: "The debt-to-GDP ratio compares a country's total government debt to the size of its economy. A ratio of 60% means the country owes 60% of everything it produces in a year. It's the primary measure of fiscal sustainability.",
+    whyItMatters: "High debt means more budget goes to interest payments instead of schools and healthcare. Above certain thresholds, lenders demand higher rates, creating a debt spiral. Sovereign default triggers economic catastrophe.",
+    howCalculated: "Debt grows when spending exceeds tax revenue. Your debt-to-GDP rises when: spending > taxes, growth slows (shrinking the denominator), or interest compounds on existing debt.",
     healthRanges: [
-      { label: "Excellent", color: "#22c55e", range: "< 40%", min: 0, max: 40 },
       {
-        label: "Manageable",
-        color: "#84cc16",
-        range: "40–80%",
-        min: 40,
-        max: 80,
+        label: "Excellent", color: "#38a169", range: "< 40%",
+        min: 0,
+        max: 0
       },
       {
-        label: "Elevated",
-        color: "#f59e0b",
-        range: "80–120%",
-        min: 80,
-        max: 120,
+        label: "Manageable", color: "#ecc94b", range: "40–80%",
+        min: 0,
+        max: 0
       },
       {
-        label: "Dangerous",
-        color: "#f97316",
-        range: "120–160%",
-        min: 120,
-        max: 160,
+        label: "Elevated", color: "#dd6b20", range: "80–120%",
+        min: 0,
+        max: 0
       },
       {
-        label: "Crisis Zone",
-        color: "#dc2626",
-        range: "> 160%",
-        min: 160,
-        max: 250,
+        label: "Dangerous", color: "#e53e3e", range: "120–160%",
+        min: 0,
+        max: 0
+      },
+      {
+        label: "Crisis Zone", color: "#9b2c2c", range: "> 160%",
+        min: 0,
+        max: 0
       },
     ],
     policyEffects: [
-      {
-        policy: "High tax rate",
-        effect: "positive",
-        description:
-          "More revenue reduces the deficit and slows debt accumulation",
-      },
-      {
-        policy: "Cut spending",
-        effect: "positive",
-        description: "Austerity directly reduces the primary deficit",
-      },
-      {
-        policy: "GDP growth",
-        effect: "positive",
-        description: "Growing economy makes same debt level a smaller % of GDP",
-      },
-      {
-        policy: "Money printing",
-        effect: "negative",
-        description:
-          "May inflate away debt short-term but destroys currency credibility",
-      },
+      { policy: "High tax rate", effect: "positive", description: "More revenue reduces the deficit and slows debt accumulation" },
+      { policy: "Cut spending", effect: "positive", description: "Austerity directly reduces the primary deficit" },
+      { policy: "GDP growth", effect: "positive", description: "Growing economy makes same debt level a smaller % of GDP" },
+      { policy: "Money printing", effect: "negative", description: "May inflate away debt short-term but destroys currency credibility" },
     ],
-    realWorldExample:
-      "Japan has debt-to-GDP at ~260% yet hasn't defaulted — most debt is held domestically. Greece at 180% in 2010 nearly collapsed because it couldn't print its own currency and foreign creditors fled.",
-    funFact:
-      "The Maastricht Treaty that created the Euro set a 60% debt-to-GDP limit for member states. Today the average Eurozone country is at ~90%. Rules, it seems, are easier to write than to follow.",
-    leaderboardImpact:
-      "Above 150% triggers 'Sovereign Risk Premium' — all future borrowing costs escalate. Above 200%, 'Default Risk Imminent' flag activates with severe score penalties.",
+    realWorldExample: "Japan has debt-to-GDP at ~260% yet hasn't defaulted — most debt is held domestically. Greece at 180% in 2010 nearly collapsed because it couldn't print its own currency and foreign creditors fled.",
+    funFact: "The Maastricht Treaty that created the Euro set a 60% debt-to-GDP limit for member states. Today the average Eurozone country is at ~90%. Rules, it seems, are easier to write than to follow.",
+    leaderboardImpact: "Above 150% triggers 'Sovereign Risk Premium' — all future borrowing costs escalate. Above 200%, 'Default Risk Imminent' flag activates with severe score penalties.",
+    valueMin: 0,
+    valueMax: 0,
+    higherIsBetter: false
   },
   currencyStrength: {
-    title: "Currency Strength",
-    symbol: "FX",
-    tagline: "Your money's reputation abroad",
-    unit: "Index (100 = baseline)",
-    valueMin: 40,
-    valueMax: 160,
-    higherIsBetter: true,
-    definition:
-      "Currency strength measures the value of your national currency relative to a basket of other major currencies. An index of 120 means your currency buys 20% more foreign goods than baseline; 80 means it's 20% weaker.",
-    whyItMatters:
-      "Currency strength directly affects import costs (weaker = more expensive imports, fueling inflation), export competitiveness (weaker = your goods are cheaper globally), and foreign investor confidence.",
-    howCalculated:
-      "Currency responds to interest rate differentials, inflation, trade balances, and capital flows. High interest rates attract foreign capital. High inflation and money printing weaken it. Trade surpluses strengthen it.",
+    title: "Currency Strength", symbol: "FX Index", tagline: "Your money's reputation abroad", unit: "Index (100 = baseline)",
+    definition: "Currency strength measures the value of your national currency relative to a basket of other major currencies. An index of 120 means your currency buys 20% more foreign goods than baseline; 80 means it's 20% weaker.",
+    whyItMatters: "Currency strength directly affects import costs (weaker = more expensive imports, fueling inflation), export competitiveness (weaker = your goods are cheaper globally), and foreign investor confidence.",
+    howCalculated: "Currency responds to interest rate differentials, inflation, trade balances, and capital flows. High interest rates attract foreign capital. High inflation and money printing weaken it. Trade surpluses strengthen it.",
     healthRanges: [
       {
-        label: "Severely Weak",
-        color: "#dc2626",
-        range: "< 60",
-        min: 40,
-        max: 60,
-      },
-      { label: "Weak", color: "#f97316", range: "60–85", min: 60, max: 85 },
-      {
-        label: "Balanced",
-        color: "#22c55e",
-        range: "85–115",
-        min: 85,
-        max: 115,
+        label: "Severely Weak", color: "#e53e3e", range: "< 60",
+        min: 0,
+        max: 0
       },
       {
-        label: "Strong",
-        color: "#3b82f6",
-        range: "115–140",
-        min: 115,
-        max: 140,
+        label: "Weak", color: "#dd6b20", range: "60–85",
+        min: 0,
+        max: 0
       },
       {
-        label: "Overvalued",
-        color: "#a855f7",
-        range: "> 140",
-        min: 140,
-        max: 160,
+        label: "Balanced", color: "#38a169", range: "85–115",
+        min: 0,
+        max: 0
+      },
+      {
+        label: "Strong", color: "#3182ce", range: "115–140",
+        min: 0,
+        max: 0
+      },
+      {
+        label: "Overvalued", color: "#805ad5", range: "> 140",
+        min: 0,
+        max: 0
       },
     ],
     policyEffects: [
-      {
-        policy: "High interest rates",
-        effect: "positive",
-        description:
-          "Attracts foreign capital seeking yield, strengthening the currency",
-      },
-      {
-        policy: "Money printing",
-        effect: "negative",
-        description: "Floods supply of domestic currency, depressing its value",
-      },
-      {
-        policy: "Trade surplus",
-        effect: "positive",
-        description: "Foreign demand for your currency to pay for exports",
-      },
-      {
-        policy: "High inflation",
-        effect: "negative",
-        description: "Erodes real returns, drives capital outflows",
-      },
+      { policy: "High interest rates", effect: "positive", description: "Attracts foreign capital seeking yield, strengthening the currency" },
+      { policy: "Money printing", effect: "negative", description: "Floods supply of domestic currency, depressing its value" },
+      { policy: "Trade surplus", effect: "positive", description: "Foreign demand for your currency to pay for exports" },
+      { policy: "High inflation", effect: "negative", description: "Erodes real returns, drives capital outflows" },
     ],
-    realWorldExample:
-      "The British Pound lost 15% in hours on 'Black Wednesday' (1992) when George Soros shorted it — the UK spent £3.3B defending it before capitulating. Argentina's peso lost 70% in 2018–2019.",
-    funFact:
-      "Switzerland deliberately weakens its franc at times — too strong a currency makes Swiss exports uncompetitive. In 2015, removing the franc cap caused it to jump 30% in minutes, roiling global markets.",
-    leaderboardImpact:
-      "Currency below 60 triggers import inflation spirals compounding unemployment and public mood penalties. Currency above 130 can hurt export-dependent economies.",
+    realWorldExample: "The British Pound lost 15% in hours on 'Black Wednesday' (1992) when George Soros shorted it — the UK spent £3.3B defending it before capitulating. Argentina's peso lost 70% in 2018–2019.",
+    funFact: "Switzerland deliberately weakens its franc at times — too strong a currency makes Swiss exports uncompetitive. In 2015, removing the franc cap caused it to jump 30% in minutes, roiling global markets.",
+    leaderboardImpact: "Currency below 60 triggers import inflation spirals compounding unemployment and public mood penalties. Currency above 130 can hurt export-dependent economies by making goods expensive abroad.",
+    valueMin: 0,
+    valueMax: 0,
+    higherIsBetter: false
   },
   tradeBalance: {
-    title: "Trade Balance",
-    symbol: "TB",
-    tagline: "Are you selling more than you're buying?",
-    unit: "$ Billions",
-    valueMin: -80,
-    valueMax: 80,
-    higherIsBetter: true,
-    definition:
-      "The trade balance is the difference between exports (goods sold abroad) and imports (goods bought from abroad). Positive = trade surplus. Negative = trade deficit — you import more than you export.",
-    whyItMatters:
-      "Persistent deficits mean money is flowing out, requiring borrowing to fund consumption. Surpluses build foreign reserves and strengthen the currency. However, large surpluses can invite trade retaliation.",
-    howCalculated:
-      "Trade balance = Exports − Imports. Your tariff level, currency strength, and innovation index determine export competitiveness. Currency weakness makes exports cheaper. High R&D improves export quality and demand.",
+    title: "Trade Balance", symbol: "TB", tagline: "Are you selling more than you're buying?", unit: "$ Billions",
+    definition: "The trade balance is the difference between exports (goods sold abroad) and imports (goods bought from abroad). Positive = trade surplus. Negative = trade deficit — you import more than you export.",
+    whyItMatters: "Persistent deficits mean money is flowing out, requiring borrowing to fund consumption. Surpluses build foreign reserves and strengthen the currency. However, large surpluses can invite trade retaliation.",
+    howCalculated: "Trade balance = Exports − Imports. Your tariff level, currency strength, and innovation index determine export competitiveness. Currency weakness makes exports cheaper. High R&D improves export quality and demand.",
     healthRanges: [
       {
-        label: "Large Deficit",
-        color: "#dc2626",
-        range: "< -$30B",
-        min: -80,
-        max: -30,
+        label: "Large Deficit", color: "#e53e3e", range: "< -$30B",
+        min: 0,
+        max: 0
       },
       {
-        label: "Deficit",
-        color: "#f97316",
-        range: "-$30B to -$5B",
-        min: -30,
-        max: -5,
+        label: "Deficit", color: "#dd6b20", range: "-$30B to -$5B",
+        min: 0,
+        max: 0
       },
       {
-        label: "Near Balance",
-        color: "#22c55e",
-        range: "-$5B to $5B",
-        min: -5,
-        max: 5,
+        label: "Near Balance", color: "#38a169", range: "-$5B to $5B",
+        min: 0,
+        max: 0
       },
       {
-        label: "Surplus",
-        color: "#3b82f6",
-        range: "$5B to $30B",
-        min: 5,
-        max: 30,
+        label: "Surplus", color: "#3182ce", range: "$5B to $30B",
+        min: 0,
+        max: 0
       },
       {
-        label: "Large Surplus",
-        color: "#a855f7",
-        range: "> $30B",
-        min: 30,
-        max: 80,
+        label: "Large Surplus", color: "#805ad5", range: "> $30B",
+        min: 0,
+        max: 0
       },
     ],
     policyEffects: [
-      {
-        policy: "Low tariffs",
-        effect: "positive",
-        description:
-          "Reduces retaliation, enables efficient supply chains boosting exports",
-      },
-      {
-        policy: "High tariffs",
-        effect: "neutral",
-        description:
-          "Cuts imports short-term but invites retaliation, harming exports",
-      },
-      {
-        policy: "R&D investment",
-        effect: "positive",
-        description: "Innovation creates high-value exports with global demand",
-      },
-      {
-        policy: "Weak currency",
-        effect: "positive",
-        description:
-          "Makes exports cheaper globally, improving competitive position",
-      },
+      { policy: "Low tariffs", effect: "positive", description: "Reduces retaliation, enables efficient supply chains boosting exports" },
+      { policy: "High tariffs", effect: "neutral", description: "Cuts imports short-term but invites retaliation, harming exports" },
+      { policy: "R&D investment", effect: "positive", description: "Innovation creates high-value exports with global demand" },
+      { policy: "Weak currency", effect: "positive", description: "Makes exports cheaper globally, improving competitive position" },
     ],
-    realWorldExample:
-      "Germany runs the world's largest trade surplus (~$300B/year) through high-quality manufacturing. The US runs the largest deficit (~-$800B/year) — reflecting strong consumer demand and the dollar's reserve currency status.",
-    funFact:
-      "Economists debate whether deficits are actually bad. Warren Buffett calls the US deficit 'a sharing of prosperity' — foreigners want dollars so badly they accept US goods less than US currency.",
-    leaderboardImpact:
-      "A strong positive trade balance improves reserves and currency strength in subsequent quarters — a compounding virtuous cycle. Sustained deficits slowly drain reserves.",
+    realWorldExample: "Germany runs the world's largest trade surplus (~$300B/year) through high-quality manufacturing. The US runs the largest deficit (~-$800B/year) — reflecting strong consumer demand and the dollar's reserve currency status.",
+    funFact: "Economists debate whether deficits are actually bad. Warren Buffett calls the US deficit 'a sharing of prosperity' — foreigners want dollars so badly they accept US goods less than US currency.",
+    leaderboardImpact: "A strong positive trade balance improves reserves and currency strength in subsequent quarters — a compounding virtuous cycle. Sustained deficits slowly drain reserves.",
+    valueMin: 0,
+    valueMax: 0,
+    higherIsBetter: false
   },
   innovationIndex: {
-    title: "Innovation Index",
-    symbol: "INN",
-    tagline: "Tomorrow's productivity, today",
-    unit: "Index (0–100)",
-    valueMin: 0,
-    valueMax: 100,
-    higherIsBetter: true,
-    definition:
-      "The Innovation Index measures an economy's capacity for technological advancement, research output, patent creation, and knowledge economy growth. It represents the long-term engine of productivity.",
-    whyItMatters:
-      "Innovation is the only truly sustainable source of economic growth. Countries that innovate develop high-value industries, attract talent, and build durable competitive advantages. Low innovation means competing on cost alone.",
-    howCalculated:
-      "Your R&D Investment slider directly drives innovation accumulation. Innovation compounds slowly — investments today pay dividends 2–4 quarters later. Education quality and trade openness also contribute.",
+    title: "Innovation Index", symbol: "INN", tagline: "Tomorrow's productivity, today", unit: "Index (0–100)",
+    definition: "The Innovation Index measures an economy's capacity for technological advancement, research output, patent creation, and knowledge economy growth. It represents the long-term engine of productivity.",
+    whyItMatters: "Innovation is the only truly sustainable source of economic growth. Countries that innovate develop high-value industries, attract talent, and build durable competitive advantages. Low innovation means competing on cost alone.",
+    howCalculated: "Your R&D Investment slider directly drives innovation accumulation. Innovation compounds slowly — investments today pay dividends 2–4 quarters later. Education quality and trade openness also contribute.",
     healthRanges: [
-      { label: "Stagnant", color: "#dc2626", range: "0–25", min: 0, max: 25 },
       {
-        label: "Developing",
-        color: "#f97316",
-        range: "25–45",
-        min: 25,
-        max: 45,
+        label: "Stagnant", color: "#e53e3e", range: "0–25",
+        min: 0,
+        max: 0
       },
       {
-        label: "Competitive",
-        color: "#f59e0b",
-        range: "45–65",
-        min: 45,
-        max: 65,
+        label: "Developing", color: "#dd6b20", range: "25–45",
+        min: 0,
+        max: 0
       },
-      { label: "Advanced", color: "#22c55e", range: "65–80", min: 65, max: 80 },
       {
-        label: "Frontier",
-        color: "#3b82f6",
-        range: "80–100",
-        min: 80,
-        max: 100,
+        label: "Competitive", color: "#ecc94b", range: "45–65",
+        min: 0,
+        max: 0
+      },
+      {
+        label: "Advanced", color: "#38a169", range: "65–80",
+        min: 0,
+        max: 0
+      },
+      {
+        label: "Frontier", color: "#3182ce", range: "80–100",
+        min: 0,
+        max: 0
       },
     ],
     policyEffects: [
-      {
-        policy: "High R&D investment",
-        effect: "positive",
-        description:
-          "Primary driver — funds universities, labs, and startup ecosystems",
-      },
-      {
-        policy: "Low tariffs",
-        effect: "positive",
-        description:
-          "Access to global supply chains accelerates technology transfer",
-      },
-      {
-        policy: "Political stability",
-        effect: "positive",
-        description:
-          "Certainty attracts long-term research investment and talent",
-      },
-      {
-        policy: "High taxes",
-        effect: "negative",
-        description: "Can reduce private R&D budgets and startup formation",
-      },
+      { policy: "High R&D investment", effect: "positive", description: "Primary driver — funds universities, labs, and startup ecosystems" },
+      { policy: "Low tariffs", effect: "positive", description: "Access to global supply chains accelerates technology transfer" },
+      { policy: "Political stability", effect: "positive", description: "Certainty attracts long-term research investment and talent" },
+      { policy: "High taxes", effect: "negative", description: "Can reduce private R&D budgets and startup formation" },
     ],
-    realWorldExample:
-      "South Korea's innovation exploded from near-zero in 1960 to world-leading by 2000 through massive state R&D (Samsung, Hyundai, LG were all state-backed). Finland became the world's most innovative nation through education investment.",
-    funFact:
-      "The internet, GPS, touchscreens, voice recognition, and mRNA vaccines all originated in government-funded research before private companies commercialized them.",
-    leaderboardImpact:
-      "High innovation creates a quarterly GDP bonus that compounds over time. It's the highest long-term return on any investment in the game — but requires patience to accumulate.",
+    realWorldExample: "South Korea's innovation exploded from near-zero in 1960 to world-leading by 2000 through massive state R&D (Samsung, Hyundai, LG were all state-backed). Finland became the world's most innovative nation through education investment.",
+    funFact: "The internet, GPS, touchscreens, voice recognition, and mRNA vaccines all originated in government-funded research before private companies commercialized them.",
+    leaderboardImpact: "High innovation creates a quarterly GDP bonus that compounds over time. It's the highest long-term return on any investment in the game — but requires patience to accumulate.",
+    valueMin: 0,
+    valueMax: 0,
+    higherIsBetter: false
   },
   avgSalary: {
-    title: "Average Salary",
-    symbol: "AVG-W",
-    tagline: "What your workers actually take home",
-    unit: "$ per year",
-    valueMin: 5000,
-    valueMax: 120000,
-    higherIsBetter: true,
-    definition:
-      "Average salary represents the mean annual income across all employed workers. It's the most direct measure of citizen economic wellbeing — the number that determines whether people can afford housing, food, healthcare, and education.",
-    whyItMatters:
-      "Wages drive 70% of GDP through consumer spending. Rising wages boost public mood, reduce inequality, and create a virtuous cycle of spending → investment → more jobs. Stagnant wages despite GDP growth signal gains going to capital rather than labor.",
-    howCalculated:
-      "Wages grow when unemployment is low (workers have bargaining power), productivity rises through innovation, and the economy is expanding. They fall when unemployment is high or inflation outpaces nominal gains.",
+    title: "Average Salary", symbol: "AVG-W", tagline: "What your workers actually take home", unit: "$ per year",
+    definition: "Average salary represents the mean annual income across all employed workers. It's the most direct measure of citizen economic wellbeing — the number that determines whether people can afford housing, food, healthcare, and education.",
+    whyItMatters: "Wages drive 70% of GDP through consumer spending. Rising wages boost public mood, reduce inequality, and create a virtuous cycle of spending → investment → more jobs. Stagnant wages despite GDP growth signal gains going to capital rather than labor.",
+    howCalculated: "Wages grow when unemployment is low (workers have bargaining power), productivity rises through innovation, and the economy is expanding. They fall when unemployment is high or inflation outpaces nominal gains.",
     healthRanges: [
       {
-        label: "Poverty Level",
-        color: "#dc2626",
-        range: "< $15K",
-        min: 5000,
-        max: 15000,
+        label: "Poverty Level", color: "#e53e3e", range: "< $15,000",
+        min: 0,
+        max: 0
       },
       {
-        label: "Low Income",
-        color: "#f97316",
-        range: "$15K–$30K",
-        min: 15000,
-        max: 30000,
+        label: "Low Income", color: "#dd6b20", range: "$15,000–$30,000",
+        min: 0,
+        max: 0
       },
       {
-        label: "Middle Class",
-        color: "#f59e0b",
-        range: "$30K–$55K",
-        min: 30000,
-        max: 55000,
+        label: "Middle Class", color: "#ecc94b", range: "$30,000–$55,000",
+        min: 0,
+        max: 0
       },
       {
-        label: "Comfortable",
-        color: "#22c55e",
-        range: "$55K–$80K",
-        min: 55000,
-        max: 80000,
+        label: "Comfortable", color: "#38a169", range: "$55,000–$80,000",
+        min: 0,
+        max: 0
       },
       {
-        label: "High Income",
-        color: "#3b82f6",
-        range: "> $80K",
-        min: 80000,
-        max: 120000,
+        label: "High Income", color: "#3182ce", range: "> $80,000",
+        min: 0,
+        max: 0
       },
     ],
     policyEffects: [
-      {
-        policy: "Low unemployment",
-        effect: "positive",
-        description:
-          "Tight labor market forces employers to compete with higher wages",
-      },
-      {
-        policy: "High R&D",
-        effect: "positive",
-        description: "Innovation creates high-skill, high-wage jobs",
-      },
-      {
-        policy: "High inflation",
-        effect: "negative",
-        description: "Erodes real wages even when nominal salaries rise",
-      },
-      {
-        policy: "High tax rate",
-        effect: "negative",
-        description: "Reduces take-home pay and can depress labor supply",
-      },
+      { policy: "Low unemployment", effect: "positive", description: "Tight labor market forces employers to compete with higher wages" },
+      { policy: "High R&D", effect: "positive", description: "Innovation creates high-skill, high-wage jobs" },
+      { policy: "High inflation", effect: "negative", description: "Erodes real wages even when nominal salaries rise" },
+      { policy: "High tax rate", effect: "negative", description: "Reduces take-home pay and can depress labor supply" },
     ],
-    realWorldExample:
-      "Norway's average salary (~$65,000) is among the world's highest, built on sovereign wealth fund returns, strong unions, and energy wealth. The US has high nominal wages but high inequality — the average masks a much lower median.",
-    funFact:
-      "In Japan, the 'shunto' (spring labor offensive) is a coordinated national wage negotiation where major corporations collectively agree to salary increases — a formal system unlike anything in Western economies.",
-    leaderboardImpact:
-      "High average salary directly boosts the Public Mood metric. Combined, they create a virtuous cycle: happy workers → political stability → easier policy implementation → better outcomes.",
+    realWorldExample: "Norway's average salary (~$65,000) is among the world's highest, built on sovereign wealth fund returns, strong unions, and energy wealth. The US has high nominal wages but high inequality — the average masks a much lower median.",
+    funFact: "In Japan, the 'shunto' (spring labor offensive) is a coordinated national wage negotiation where major corporations collectively agree to salary increases — a formal system unlike anything in Western economies.",
+    leaderboardImpact: "High average salary directly boosts the Public Mood metric. Combined, they create a virtuous cycle: happy workers → political stability → easier policy implementation → better outcomes.",
+    valueMin: 0,
+    valueMax: 0,
+    higherIsBetter: false
   },
   publicMood: {
-    title: "Public Mood",
-    symbol: "MOOD",
-    tagline: "The electorate's verdict on your leadership",
-    unit: "Score (0–100)",
-    valueMin: 0,
-    valueMax: 100,
-    higherIsBetter: true,
-    definition:
-      "Public Mood synthesizes citizen satisfaction across economic conditions: employment security, real wages, price stability, and perceptions of governance quality. It's your political capital — the fuel for implementing difficult but necessary reforms.",
-    whyItMatters:
-      "Low public mood signals social instability, protest, and political crisis. In the game (as in real life), it limits your ability to implement bold policies. High public mood gives you the mandate to take risks and endure short-term pain for long-term gain.",
-    howCalculated:
-      "Public mood responds to unemployment trends, real wage growth, inflation (people hate rising prices), and overall economic trajectory. Rapid improvements boost it; sudden shocks crash it. Trends matter more than levels.",
+    title: "Public Mood", symbol: "MOOD", tagline: "The electorate's verdict on your leadership", unit: "Score (0–100)",
+    definition: "Public Mood synthesizes citizen satisfaction across economic conditions: employment security, real wages, price stability, and perceptions of governance quality. It's your political capital — the fuel for implementing difficult but necessary reforms.",
+    whyItMatters: "Low public mood signals social instability, protest, and political crisis. In the game (as in real life), it limits your ability to implement bold policies. High public mood gives you the mandate to take risks and endure short-term pain for long-term gain.",
+    howCalculated: "Public mood responds to unemployment trends, real wage growth, inflation (people hate rising prices), and overall economic trajectory. Rapid improvements boost it; sudden shocks crash it. Trends matter more than levels.",
     healthRanges: [
       {
-        label: "Revolt Risk",
-        color: "#dc2626",
-        range: "0–25",
+        label: "Revolt Risk", color: "#e53e3e", range: "0–25",
         min: 0,
-        max: 25,
+        max: 0
       },
       {
-        label: "Discontent",
-        color: "#f97316",
-        range: "25–45",
-        min: 25,
-        max: 45,
-      },
-      { label: "Neutral", color: "#f59e0b", range: "45–60", min: 45, max: 60 },
-      {
-        label: "Satisfied",
-        color: "#22c55e",
-        range: "60–75",
-        min: 60,
-        max: 75,
+        label: "Discontent", color: "#dd6b20", range: "25–45",
+        min: 0,
+        max: 0
       },
       {
-        label: "Thriving",
-        color: "#3b82f6",
-        range: "75–100",
-        min: 75,
-        max: 100,
+        label: "Neutral", color: "#ecc94b", range: "45–60",
+        min: 0,
+        max: 0
+      },
+      {
+        label: "Satisfied", color: "#38a169", range: "60–75",
+        min: 0,
+        max: 0
+      },
+      {
+        label: "Thriving", color: "#3182ce", range: "75–100",
+        min: 0,
+        max: 0
       },
     ],
     policyEffects: [
-      {
-        policy: "Low unemployment",
-        effect: "positive",
-        description:
-          "Job security is the single largest driver of citizen happiness",
-      },
-      {
-        policy: "Low inflation",
-        effect: "positive",
-        description:
-          "Stable prices preserve purchasing power — people notice grocery bills",
-      },
-      {
-        policy: "Rising wages",
-        effect: "positive",
-        description: "Direct improvement in material living standards",
-      },
-      {
-        policy: "High debt",
-        effect: "negative",
-        description: "Citizens fear future tax hikes and austerity",
-      },
+      { policy: "Low unemployment", effect: "positive", description: "Job security is the single largest driver of citizen happiness" },
+      { policy: "Low inflation", effect: "positive", description: "Stable prices preserve purchasing power — people notice grocery bills" },
+      { policy: "Rising wages", effect: "positive", description: "Direct improvement in material living standards" },
+      { policy: "High debt", effect: "negative", description: "Citizens fear future tax hikes and austerity" },
     ],
-    realWorldExample:
-      "French President Chirac's approval collapsed from 60% to 30% in 1995 purely due to a 2% VAT increase. Margaret Thatcher's public mood crashed to 23% during the 1981–82 recession before the Falklands War rescue.",
-    funFact:
-      "The 'misery index' (inflation + unemployment) was invented by economist Arthur Okun to predict election outcomes. Presidents who preside over high misery indexes almost always lose re-election.",
-    leaderboardImpact:
-      "Public mood below 25 triggers the 'Social Instability Threshold' flag, imposing GDP growth penalties and potentially triggering political event modifiers in subsequent quarters.",
+    realWorldExample: "French President Chirac's approval collapsed from 60% to 30% in 1995 purely due to a 2% VAT increase. Margaret Thatcher's public mood crashed to 23% during the 1981–82 recession before the Falklands War rescue.",
+    funFact: "The 'misery index' (inflation + unemployment) was invented by economist Arthur Okun to predict election outcomes. Presidents who preside over high misery indexes almost always lose re-election.",
+    leaderboardImpact: "Public mood below 25 triggers the 'Social Instability Threshold' flag, imposing GDP growth penalties and potentially triggering political event modifiers in subsequent quarters.",
+    valueMin: 0,
+    valueMax: 0,
+    higherIsBetter: false
   },
   reserves: {
-    title: "Foreign Reserves",
-    symbol: "SWF",
-    tagline: "Your economy's rainy-day fund",
-    unit: "$ Billions",
-    valueMin: 0,
-    valueMax: 500,
-    higherIsBetter: true,
-    definition:
-      "Foreign reserves are assets held by the central bank in foreign currencies, gold, and IMF special drawing rights. They serve as the ultimate financial buffer — enabling the government to defend the currency and absorb external shocks.",
-    whyItMatters:
-      "Reserves are the difference between a managed crisis and a catastrophic one. Countries with deep reserves can defend against speculative attacks, import essential goods during disruptions, and avoid IMF bailouts with harsh conditions.",
-    howCalculated:
-      "Reserves accumulate through trade surpluses, capital inflows, and deliberate savings. They drain through trade deficits, capital flight, and defending a weakening currency.",
+    title: "Foreign Reserves", symbol: "SWF", tagline: "Your economy's rainy-day fund", unit: "$ Billions",
+    definition: "Foreign reserves are assets held by the central bank in foreign currencies, gold, and IMF special drawing rights. They serve as the ultimate financial buffer — enabling the government to defend the currency and absorb external shocks.",
+    whyItMatters: "Reserves are the difference between a managed crisis and a catastrophic one. Countries with deep reserves can defend against speculative attacks, import essential goods during disruptions, and avoid IMF bailouts with harsh conditions.",
+    howCalculated: "Reserves accumulate through trade surpluses, capital inflows, and deliberate savings. They drain through trade deficits, capital flight, and defending a weakening currency.",
     healthRanges: [
-      { label: "Critical", color: "#dc2626", range: "< $20B", min: 0, max: 20 },
-      { label: "Low", color: "#f97316", range: "$20B–$60B", min: 20, max: 60 },
       {
-        label: "Adequate",
-        color: "#f59e0b",
-        range: "$60B–$120B",
-        min: 60,
-        max: 120,
+        label: "Critical", color: "#e53e3e", range: "< $20B",
+        min: 0,
+        max: 0
       },
       {
-        label: "Strong",
-        color: "#22c55e",
-        range: "$120B–$250B",
-        min: 120,
-        max: 250,
+        label: "Low", color: "#dd6b20", range: "$20B–$60B",
+        min: 0,
+        max: 0
       },
       {
-        label: "Fortress",
-        color: "#3b82f6",
-        range: "> $250B",
-        min: 250,
-        max: 500,
+        label: "Adequate", color: "#ecc94b", range: "$60B–$120B",
+        min: 0,
+        max: 0
+      },
+      {
+        label: "Strong", color: "#38a169", range: "$120B–$250B",
+        min: 0,
+        max: 0
+      },
+      {
+        label: "Fortress", color: "#3182ce", range: "> $250B",
+        min: 0,
+        max: 0
       },
     ],
     policyEffects: [
-      {
-        policy: "Trade surplus",
-        effect: "positive",
-        description: "Most sustainable reserves accumulation path",
-      },
-      {
-        policy: "Low foreign lending",
-        effect: "positive",
-        description: "Conserves reserves for domestic emergencies",
-      },
-      {
-        policy: "Currency defense",
-        effect: "negative",
-        description: "Defending a weakening currency rapidly depletes reserves",
-      },
-      {
-        policy: "Fiscal surplus",
-        effect: "positive",
-        description: "Budget surpluses can be saved directly as reserve assets",
-      },
+      { policy: "Trade surplus", effect: "positive", description: "Most sustainable reserves accumulation path" },
+      { policy: "Low foreign lending", effect: "positive", description: "Conserves reserves for domestic emergencies" },
+      { policy: "Currency defense", effect: "negative", description: "Defending a weakening currency rapidly depletes reserves" },
+      { policy: "Fiscal surplus", effect: "positive", description: "Budget surpluses can be saved directly as reserve assets" },
     ],
-    realWorldExample:
-      "China holds $3.3 trillion in foreign reserves — the world's largest. Thailand's 1997 reserves crisis sparked the Asian Financial Contagion when it couldn't defend the baht, triggering 7 country collapses in 3 months.",
-    funFact:
-      "Norway's Government Pension Fund — $1.7 trillion — was built entirely from North Sea oil revenues saved since the 1990s. Its investment returns now fund 20% of Norway's national budget annually.",
-    leaderboardImpact:
-      "Reserves below $20B trigger the 'Critically Low Reserves' flag — severely limiting policy options. High reserves provide a quarterly stability bonus.",
+    realWorldExample: "China holds $3.3 trillion in foreign reserves — the world's largest. Thailand's 1997 reserves crisis sparked the Asian Financial Contagion when it couldn't defend the baht, triggering 7 country collapses in 3 months.",
+    funFact: "Norway's Government Pension Fund — $1.7 trillion — was built entirely from North Sea oil revenues saved since the 1990s. Its investment returns now fund 20% of Norway's national budget annually.",
+    leaderboardImpact: "Reserves below $20B trigger the 'Critically Low Reserves' flag — severely limiting policy options and imposing interest rate premium costs on all future borrowing. High reserves provide a quarterly stability bonus.",
+    valueMin: 0,
+    valueMax: 0,
+    higherIsBetter: false
   },
 };
 
@@ -942,49 +676,21 @@ function Spark({ data, color }: { data: number[]; color: string }) {
 function RangePositionBar({ edu, value }: { edu: MetricEdu; value: number }) {
   const span = edu.valueMax - edu.valueMin;
   const pct = Math.max(0, Math.min(100, ((value - edu.valueMin) / span) * 100));
+  const activeRange = edu.healthRanges.find((r) => value >= r.min && value <= r.max);
+  const activeColor = activeRange?.color ?? "#bf3509";
+
   return (
     <div style={{ marginBottom: 20 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginBottom: 8,
-        }}
-      >
-        <span
-          style={{
-            fontFamily: "'JetBrains Mono'",
-            fontSize: 8,
-            letterSpacing: "0.22em",
-            textTransform: "uppercase",
-            color: "rgba(242,235,224,0.22)",
-          }}
-        >
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+        <span style={{ fontFamily: "'JetBrains Mono'", fontSize: 8, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(242,235,224,0.22)" }}>
           Current position
         </span>
-        <span
-          style={{
-            fontFamily: "'JetBrains Mono'",
-            fontSize: 9,
-            color: "rgba(242,235,224,0.5)",
-          }}
-        >
-          {edu.healthRanges.find((r) => value >= r.min && value <= r.max)
-            ?.label ?? "—"}
+        <span style={{ fontFamily: "'JetBrains Mono'", fontSize: 9, color: "rgba(242,235,224,0.5)" }}>
+          {activeRange?.label ?? "—"}
         </span>
       </div>
 
-      {/* Segmented bar */}
-      <div
-        style={{
-          display: "flex",
-          height: 18,
-          gap: 2,
-          marginBottom: 8,
-          borderRadius: 2,
-          overflow: "hidden",
-        }}
-      >
+      <div style={{ display: "flex", height: 18, gap: 2, marginBottom: 8, borderRadius: 2, overflow: "hidden" }}>
         {edu.healthRanges.map((r, i) => {
           const w = ((r.max - r.min) / span) * 100;
           const isActive = value >= r.min && value <= r.max;
@@ -1004,35 +710,19 @@ function RangePositionBar({ edu, value }: { edu: MetricEdu; value: number }) {
                 transition: "background 0.3s",
               }}
             >
-              {isActive && (
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    background: r.color + "14",
-                  }}
-                />
-              )}
+              {isActive && <div style={{ position: "absolute", inset: 0, background: r.color + "14" }} />}
             </div>
           );
         })}
       </div>
 
-      {/* Needle track */}
-      <div
-        style={{
-          position: "relative",
-          height: 4,
-          background: "rgba(242,235,224,0.06)",
-          borderRadius: 2,
-        }}
-      >
+      <div style={{ position: "relative", height: 4, background: "rgba(242,235,224,0.06)", borderRadius: 2 }}>
         <div
           style={{
             position: "absolute",
             inset: 0,
             width: `${pct}%`,
-            background: `linear-gradient(90deg, ${getHealth({ healthRanges: edu.healthRanges.filter((r) => value >= r.min && value <= r.max) } as any, value)?.color ?? "#bf3509"}, transparent)`,
+            background: `linear-gradient(90deg, ${activeColor}, transparent)`,
             borderRadius: 2,
             transition: "width 0.6s cubic-bezier(.22,.72,0,1)",
           }}
@@ -1053,24 +743,14 @@ function RangePositionBar({ edu, value }: { edu: MetricEdu; value: number }) {
         />
       </div>
 
-      {/* Range labels */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginTop: 6,
-        }}
-      >
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
         {edu.healthRanges.map((r, i) => (
           <span
             key={i}
             style={{
               fontFamily: "'JetBrains Mono'",
               fontSize: 7,
-              color:
-                value >= r.min && value <= r.max
-                  ? r.color
-                  : "rgba(242,235,224,0.18)",
+              color: value >= r.min && value <= r.max ? r.color : "rgba(242,235,224,0.18)",
               textTransform: "uppercase",
               letterSpacing: "0.1em",
             }}
@@ -1163,6 +843,8 @@ function EduDrawer({
     boxShadow: vis ? `-40px 0 120px rgba(0,0,0,0.7)` : "none",
     borderLeft: `1px solid ${health.color}22`,
   } as React.CSSProperties;
+
+
 
   return (
     <>
