@@ -6,6 +6,7 @@
 @tailwind components;
 @tailwind utilities;
 
+/* @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap'); */
 /* ── Design Tokens ────────────────────────────────────────── */
 :root {
   /* Palette */

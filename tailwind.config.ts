@@ -1,4 +1,4 @@
-import type {Config} from 'tailwindcss';
+import type { Config } from 'tailwindcss';
 
 export default {
   darkMode: ['class'],
@@ -13,6 +13,9 @@ export default {
         body: ['Inter', 'sans-serif'],
         headline: ['Space Grotesk', 'sans-serif'],
         code: ['monospace'],
+        // EconoQuest fonts
+        display: ['Bebas Neue', 'sans-serif'],
+        mono: ['DM Mono', 'Courier New', 'monospace'],
       },
       colors: {
         background: 'hsl(var(--background))',
@@ -65,6 +68,17 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
         },
+        // EconoQuest palette
+        'eq-bg': '#f2ebe0',
+        'eq-bg2': '#e9e0d2',
+        'eq-bg3': '#dfd4c4',
+        'eq-ink': '#1c1409',
+        'eq-accent': '#bf3509',
+        'eq-accent2': '#d94010',
+        'eq-muted': 'rgba(28,20,9,0.52)',
+        'eq-dim': 'rgba(28,20,9,0.32)',
+        'eq-border': 'rgba(28,20,9,0.13)',
+        'eq-border2': 'rgba(28,20,9,0.22)',
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -92,11 +106,34 @@ export default {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.8' },
         },
+        // EconoQuest animations
+        'eq-ticker': {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
+        'eq-blink': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0' },
+        },
+        'eq-fade-up': {
+          'from': { opacity: '0', transform: 'translateY(14px)' },
+          'to': { opacity: '1', transform: 'translateY(0)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'pulse-subtle': 'pulse-subtle 3s infinite ease-in-out',
+        // EconoQuest animations
+        'ticker': 'eq-ticker 44s linear infinite',
+        'blink': 'eq-blink 2s step-end infinite',
+        'fade-up': 'eq-fade-up 0.6s ease both',
+      },
+      spacing: {
+        'px-44': '44px',
+      },
+      borderWidth: {
+        '1.5': '1.5px',
       },
     },
   },

@@ -1,374 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
-
-function useEconoStyles() {
-  useEffect(() => {
-    const id = 'econoquest-v4-styles';
-    if (document.getElementById(id)) return;
-    const el = document.createElement('style');
-    el.id = id;
-    el.textContent = `
-      @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap');
-
-      @keyframes eq-ticker {
-        0%   { transform: translateX(0); }
-        100% { transform: translateX(-50%); }
-      }
-      @keyframes eq-blink {
-        0%, 100% { opacity: 1; }
-        50%       { opacity: 0; }
-      }
-      @keyframes eq-fade-up {
-        from { opacity: 0; transform: translateY(14px); }
-        to   { opacity: 1; transform: translateY(0); }
-      }
-
-      .eq-root * { box-sizing: border-box; margin: 0; padding: 0; }
-
-      .eq-root {
-        --bg:      #f2ebe0;
-        --bg2:     #e9e0d2;
-        --bg3:     #dfd4c4;
-        --ink:     #1c1409;
-        --acc:     #bf3509;
-        --acc2:    #d94010;
-        --muted:   rgba(28,20,9,0.52);
-        --dim:     rgba(28,20,9,0.32);
-        --border:  rgba(28,20,9,0.13);
-        --border2: rgba(28,20,9,0.22);
-        --mono:    'DM Mono', 'Courier New', monospace;
-        --display: 'Bebas Neue', sans-serif;
-        background: var(--bg);
-        color: var(--ink);
-        font-family: var(--mono);
-        line-height: 1.6;
-        min-height: 100vh;
-      }
-
-      /* TICKER */
-      .eq-ticker-wrap {
-        background: var(--acc);
-        color: #fff;
-        height: 30px;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-      }
-      .eq-ticker-label {
-        padding: 0 14px;
-        font-size: 9px;
-        letter-spacing: .18em;
-        text-transform: uppercase;
-        white-space: nowrap;
-        border-right: 1px solid rgba(255,255,255,.25);
-        height: 100%;
-        display: flex;
-        align-items: center;
-        flex-shrink: 0;
-      }
-      .eq-ticker-track {
-        display: flex;
-        animation: eq-ticker 44s linear infinite;
-        white-space: nowrap;
-      }
-      .eq-ticker-item {
-        padding: 0 18px;
-        font-size: 10px;
-        letter-spacing: .05em;
-        opacity: .88;
-      }
-      .eq-ticker-item::after {
-        content: '·';
-        margin-left: 18px;
-        opacity: .4;
-      }
-
-      /* NAV */
-      .eq-nav {
-        border-bottom: 2px solid var(--border2);
-        padding: 0 44px;
-        height: 60px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background: var(--bg);
-      }
-      .eq-logo { display: flex; align-items: center; gap: 10px; }
-      .eq-logo-dot {
-        width: 7px; height: 7px;
-        background: var(--acc);
-        border-radius: 50%;
-        animation: eq-blink 2s step-end infinite;
-        flex-shrink: 0;
-      }
-      .eq-logo-name {
-        font-family: var(--display);
-        font-size: 21px;
-        letter-spacing: .05em;
-        color: var(--ink);
-      }
-      .eq-logo-badge {
-        font-size: 8px;
-        letter-spacing: .12em;
-        color: var(--muted);
-        border: 1px solid var(--border2);
-        padding: 2px 7px;
-        text-transform: uppercase;
-      }
-      .eq-nav-links { display: flex; align-items: center; gap: 22px; }
-      .eq-nav-desktop { display: flex; align-items: center; gap: 22px; }
-      .eq-nav-link {
-        font-size: 11px;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-        color: var(--muted);
-        text-decoration: none;
-        transition: color .15s;
-      }
-      .eq-nav-link:hover { color: var(--acc); }
-
-      /* BUTTONS */
-      .eq-btn-primary {
-        background: var(--acc);
-        color: #fff;
-        border: none;
-        font-family: var(--mono);
-        font-weight: 500;
-        font-size: 11px;
-        letter-spacing: .09em;
-        text-transform: uppercase;
-        cursor: pointer;
-        padding: 10px 22px;
-        transition: background .12s;
-        white-space: nowrap;
-      }
-      .eq-btn-primary:hover { background: var(--acc2); }
-      .eq-btn-primary.lg { font-size: 14px; padding: 17px 40px; }
-
-      .eq-btn-ghost {
-        background: transparent;
-        color: var(--ink);
-        border: 1.5px solid var(--border2);
-        font-family: var(--mono);
-        font-weight: 500;
-        font-size: 11px;
-        letter-spacing: .09em;
-        text-transform: uppercase;
-        cursor: pointer;
-        padding: 10px 22px;
-        transition: background .12s, border-color .12s;
-        white-space: nowrap;
-      }
-      .eq-btn-ghost:hover { background: rgba(28,20,9,.05); border-color: rgba(28,20,9,.4); }
-      .eq-btn-ghost.lg { font-size: 14px; padding: 17px 40px; }
-
-      /* HERO */
-      .eq-hero {
-        display: grid;
-        grid-template-columns: 1fr 320px;
-        gap: 52px;
-        align-items: start;
-        padding: 60px 44px 72px;
-        border-bottom: 1px solid var(--border2);
-        animation: eq-fade-up .6s ease both;
-      }
-      .eq-classify-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-bottom: 24px;
-      }
-      .eq-classify-badge {
-        font-size: 8px;
-        font-weight: 500;
-        letter-spacing: .16em;
-        color: var(--acc);
-        border: 1px solid var(--acc);
-        padding: 3px 9px;
-        text-transform: uppercase;
-      }
-      .eq-classify-sub {
-        font-size: 9px;
-        color: var(--muted);
-        letter-spacing: .1em;
-        text-transform: uppercase;
-      }
-      .eq-headline {
-        font-family: var(--display);
-        font-size: clamp(64px, 10vw, 118px);
-        line-height: .88;
-        letter-spacing: .025em;
-        color: var(--ink);
-        margin-bottom: 30px;
-      }
-      .eq-headline .acc { color: var(--acc); }
-      .eq-headline .cursor::after {
-        content: '█';
-        color: var(--acc);
-        font-size: .58em;
-        animation: eq-blink 1s step-end infinite;
-      }
-      .eq-lead {
-        border-left: 3px solid var(--acc);
-        padding-left: 18px;
-        margin-bottom: 30px;
-        max-width: 520px;
-      }
-      .eq-lead p {
-        font-size: 15px;
-        line-height: 1.85;
-        color: var(--muted);
-      }
-      .eq-lead strong { color: var(--ink); font-weight: 500; }
-      .eq-ctas { display: flex; gap: 10px; flex-wrap: wrap; }
-
-      /* DATA PANEL */
-      .eq-panel { border: 1px solid var(--border2); background: var(--bg2); }
-      .eq-panel-head {
-        padding: 16px 18px;
-        border-bottom: 1px solid var(--border2);
-        font-size: 8px;
-        font-weight: 500;
-        letter-spacing: .2em;
-        color: var(--acc);
-        text-transform: uppercase;
-      }
-      .eq-data-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        padding: 11px 18px;
-        border-bottom: 1px solid var(--border);
-        gap: 8px;
-      }
-      .eq-data-row:last-of-type { border-bottom: none; }
-      .eq-data-label { font-size: 11px; color: var(--muted); }
-      .eq-data-val { font-size: 12px; font-weight: 500; text-align: right; }
-      .eq-data-delta { font-size: 9px; text-align: right; margin-top: 1px; color: var(--dim); }
-      .eq-data-val.warn { color: var(--acc); }
-      .eq-data-delta.warn { color: var(--acc); }
-      .eq-note-box {
-        padding: 13px 18px;
-        background: rgba(191,53,9,.06);
-        border-top: 1px solid rgba(191,53,9,.18);
-      }
-      .eq-note-title {
-        font-size: 8px;
-        font-weight: 500;
-        letter-spacing: .14em;
-        color: var(--acc);
-        text-transform: uppercase;
-        margin-bottom: 4px;
-      }
-      .eq-note-body { font-size: 11px; color: var(--muted); line-height: 1.65; }
-
-      /* FEATURES */
-      .eq-features { padding: 64px 44px; border-bottom: 1px solid var(--border2); }
-      .eq-section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        border-bottom: 1px solid var(--border2);
-        padding-bottom: 18px;
-        margin-bottom: 44px;
-        flex-wrap: wrap;
-        gap: 8px;
-      }
-      .eq-section-title {
-        font-family: var(--display);
-        font-size: 36px;
-        letter-spacing: .05em;
-        color: var(--ink);
-      }
-      .eq-section-meta { font-size: 10px; color: var(--muted); letter-spacing: .09em; text-transform: uppercase; }
-      .eq-feature-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1px;
-        background: var(--border);
-      }
-      .eq-feature-card { background: var(--bg); padding: 30px 26px; transition: background .18s; }
-      .eq-feature-card:hover { background: var(--bg2); }
-      .eq-feature-num { font-size: 9px; letter-spacing: .15em; color: var(--acc); margin-bottom: 11px; font-weight: 500; }
-      .eq-feature-title { font-family: var(--display); font-size: 27px; letter-spacing: .04em; color: var(--ink); margin-bottom: 3px; }
-      .eq-feature-sub { font-size: 10px; color: var(--muted); letter-spacing: .06em; margin-bottom: 13px; text-transform: uppercase; }
-      .eq-feature-body { font-size: 13px; color: var(--muted); line-height: 1.8; margin-bottom: 18px; }
-      .eq-feature-tag { font-size: 8px; color: var(--acc); letter-spacing: .1em; text-transform: uppercase; padding-top: 13px; border-top: 1px solid var(--border); }
-
-      /* QUOTE */
-      .eq-quote-section {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 56px;
-        align-items: center;
-        padding: 64px 44px;
-        border-bottom: 1px solid var(--border2);
-        background: var(--bg2);
-      }
-      .eq-big-quote { font-family: var(--display); font-size: 72px; color: var(--acc); line-height: .8; opacity: .22; margin-bottom: 6px; }
-      .eq-blockquote { font-family: var(--display); font-size: 22px; line-height: 1.25; letter-spacing: .025em; color: var(--ink); margin-bottom: 22px; }
-      .eq-attribution { display: flex; align-items: center; gap: 12px; }
-      .eq-attr-line { width: 1px; height: 34px; background: var(--acc); flex-shrink: 0; }
-      .eq-attr-name { font-size: 13px; font-weight: 500; color: var(--ink); }
-      .eq-attr-role { font-size: 9px; color: var(--muted); letter-spacing: .09em; text-transform: uppercase; margin-top: 2px; }
-      .eq-checklist { display: flex; flex-direction: column; gap: 14px; }
-      .eq-check-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 1px solid var(--border2); background: var(--bg); }
-      .eq-check-dot { width: 6px; height: 6px; background: var(--acc); border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
-      .eq-check-title { font-size: 12px; font-weight: 500; color: var(--ink); margin-bottom: 3px; }
-      .eq-check-desc { font-size: 11px; color: var(--muted); line-height: 1.6; }
-
-      /* CTA */
-      .eq-cta-band {
-        padding: 64px 44px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 40px;
-        flex-wrap: wrap;
-      }
-      .eq-cta-eyebrow { font-size: 9px; color: var(--muted); letter-spacing: .16em; text-transform: uppercase; margin-bottom: 10px; }
-      .eq-cta-headline { font-family: var(--display); font-size: 54px; line-height: .9; letter-spacing: .02em; color: var(--ink); }
-      .eq-cta-aside { display: flex; flex-direction: column; align-items: center; gap: 9px; }
-      .eq-cta-note { font-size: 10px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
-
-      /* FOOTER */
-      .eq-footer {
-        border-top: 2px solid var(--border2);
-        padding: 22px 44px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 16px;
-        background: var(--bg2);
-      }
-      .eq-footer-left { display: flex; align-items: center; gap: 12px; }
-      .eq-footer-wm { font-family: var(--display); font-size: 15px; letter-spacing: .07em; color: var(--ink); }
-      .eq-footer-copy { font-size: 9px; color: var(--muted); letter-spacing: .08em; }
-      .eq-footer-links { display: flex; gap: 20px; flex-wrap: wrap; }
-
-      /* RESPONSIVE */
-      @media (max-width: 720px) {
-        .eq-nav { padding: 0 20px; height: 52px; }
-        .eq-nav-desktop { display: none; }
-        .eq-hero { grid-template-columns: 1fr; gap: 32px; padding: 36px 20px 48px; }
-        .eq-features { padding: 44px 20px; }
-        .eq-feature-grid { grid-template-columns: 1fr; }
-        .eq-quote-section { grid-template-columns: 1fr; gap: 32px; padding: 44px 20px; }
-        .eq-cta-band { flex-direction: column; align-items: flex-start; gap: 24px; padding: 44px 20px; }
-        .eq-footer { padding: 20px; flex-direction: column; align-items: flex-start; }
-      }
-      @media (max-width: 440px) {
-        .eq-headline { font-size: clamp(52px, 16vw, 80px); }
-        .eq-ctas { flex-direction: column; }
-        .eq-btn-primary.lg, .eq-btn-ghost.lg { width: 100%; text-align: center; }
-      }
-    `;
-    document.head.appendChild(el);
-  }, []);
-}
+import React, { useEffect, useState } from 'react';
 
 const TICKER = [
   'Global GDP $105T (2023)', 'US CPI 3.4% YoY', 'Crude Oil ~$85/bbl',
@@ -413,119 +45,228 @@ interface LandingPageProps {
 }
 
 export const LandingPage = ({ onStart }: LandingPageProps) => {
-  useEconoStyles();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    // Inject critical CSS immediately to prevent FOUC
+    const styleTag = document.createElement('style');
+    styleTag.textContent = `
+      @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap');
+      
+      @keyframes eq-ticker {
+        0%   { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+      @keyframes eq-blink {
+        0%, 100% { opacity: 1; }
+        50%       { opacity: 0; }
+      }
+      @keyframes eq-fade-up {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      
+      html, body { 
+        background: #f2ebe0;
+        color: #1c1409;
+        font-family: 'DM Mono', 'Courier New', monospace;
+        line-height: 1.6;
+        min-height: 100vh;
+      }
+    `;
+    document.head.insertBefore(styleTag, document.head.firstChild);
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null; // Prevent flash by not rendering until after styles are injected
+  }
 
   return (
-    <div className="eq-root">
-
+    <div className="min-h-screen bg-eq-bg text-eq-ink font-mono leading-relaxed">
       {/* TICKER */}
-      <div className="eq-ticker-wrap">
-        <div className="eq-ticker-label">Live Feed</div>
-        <div style={{ overflow: 'hidden', flex: 1 }}>
-          <div className="eq-ticker-track">
+      <div className="h-[30px] bg-eq-accent text-white overflow-hidden flex items-center">
+        <div className="px-[14px] text-[9px] leading-[30px] font-medium tracking-[0.18em] uppercase whitespace-nowrap border-r border-white/25 shrink-0">
+          Live Feed
+        </div>
+        <div className="flex-1 overflow-hidden">
+          <div className="flex whitespace-nowrap animate-ticker">
             {[...TICKER, ...TICKER].map((t, i) => (
-              <span className="eq-ticker-item" key={i}>{t}</span>
+              <span key={i} className="px-[18px] text-[10px] tracking-[0.05em] opacity-88">
+                {t}
+                <span className="ml-[18px] opacity-40">·</span>
+              </span>
             ))}
           </div>
         </div>
       </div>
 
       {/* NAV */}
-      <nav className="eq-nav">
-        <div className="eq-logo">
-          <div className="eq-logo-dot" />
-          <span className="eq-logo-name">ECONOQUEST</span>
-          <span className="eq-logo-badge">Beta</span>
+      <nav className="border-b-2 border-eq-border2 px-[44px] h-[60px] flex items-center justify-between bg-eq-bg">
+        <div className="flex items-center gap-[10px]">
+          <div 
+            className="w-[7px] h-[7px] bg-eq-accent rounded-full shrink-0 animate-blink"
+          />
+          <span className="font-display text-[21px] tracking-[0.05em] text-eq-ink">
+            ECONOQUEST
+          </span>
+          <span className="text-[8px] tracking-[0.12em] text-eq-muted border border-eq-border2 px-[7px] py-[2px] uppercase">
+            Beta
+          </span>
         </div>
-        <div className="eq-nav-links">
-          <div className="eq-nav-desktop">
-            <a href="#features" className="eq-nav-link">Features</a>
-            <a href="/leaderboard" className="eq-nav-link">Rankings</a>
+        <div className="flex items-center gap-[22px]">
+          <div className="hidden md:flex items-center gap-[22px]">
+            <a href="#features" className="text-[11px] tracking-[0.08em] text-eq-muted uppercase hover:text-eq-accent transition-colors duration-150">
+              Features
+            </a>
+            <a href="/leaderboard" className="text-[11px] tracking-[0.08em] text-eq-muted uppercase hover:text-eq-accent transition-colors duration-150">
+              Rankings
+            </a>
           </div>
-          <button className="eq-btn-primary" onClick={onStart}>Enter Platform →</button>
+          <button 
+            onClick={onStart}
+            className="bg-eq-accent text-white px-[22px] py-[10px] text-[11px] font-medium tracking-[0.09em] uppercase cursor-pointer hover:bg-eq-accent2 transition-colors duration-150 whitespace-nowrap"
+          >
+            Enter Platform →
+          </button>
         </div>
       </nav>
 
       {/* HERO */}
-      <section className="eq-hero">
+      <section 
+        className="grid grid-cols-[1fr_320px] gap-[52px] items-start px-[44px] py-[60px] pb-[72px] border-b border-eq-border2 animate-fade-up"
+      >
         <div>
-          <div className="eq-classify-row">
-            <span className="eq-classify-badge">◉ Simulation Active</span>
-            <span className="eq-classify-sub">Mandate // Authority Granted</span>
+          <div className="flex items-center gap-[12px] flex-wrap mb-[24px]">
+            <span className="text-[8px] font-medium tracking-[0.16em] text-eq-accent border border-eq-accent px-[9px] py-[3px] uppercase">
+              ◉ Simulation Active
+            </span>
+            <span className="text-[9px] text-eq-muted tracking-[0.1em] uppercase">
+              Mandate // Authority Granted
+            </span>
           </div>
-          <h1 className="eq-headline">
+
+          <h1 className="font-display text-[clamp(64px,10vw,118px)] leading-[0.88] tracking-[0.025em] text-eq-ink mb-[30px]">
             THE WORLD<br />
             ECONOMY<br />
-            IS <span className="acc">YOURS</span>.<span className="cursor" />
+            IS <span className="text-eq-accent">YOURS</span>
+            <span className="text-eq-accent" style={{ animation: 'eq-blink 1s step-end infinite' }}>█</span>
           </h1>
-          <div className="eq-lead">
-            <p>
+
+          <div className="border-l-[3px] border-eq-accent pl-[18px] mb-[30px] max-w-[520px]">
+            <p className="text-[15px] leading-[1.85] text-eq-muted">
               Inflation. Debt spirals. Trade wars. Supply shocks.<br />
               You didn't cause this mess — but you've just been handed the keys.<br />
-              <strong>Build an empire. Crash the market. Find out what actually works.</strong>
+              <strong className="text-eq-ink font-medium">Build an empire. Crash the market. Find out what actually works.</strong>
             </p>
           </div>
-          <div className="eq-ctas">
-            <button className="eq-btn-primary lg" onClick={onStart}>▶ Assume Command</button>
-            <button className="eq-btn-ghost lg">Mission Briefing</button>
+
+          <div className="flex gap-[10px] flex-wrap">
+            <button 
+              onClick={onStart}
+              className="bg-eq-accent text-white px-[40px] py-[17px] text-[14px] font-medium tracking-[0.09em] uppercase cursor-pointer hover:bg-eq-accent2 transition-colors duration-150 whitespace-nowrap"
+            >
+              ▶ Assume Command
+            </button>
+            <button className="bg-transparent text-eq-ink px-[40px] py-[17px] text-[14px] font-medium tracking-[0.09em] border-[1.5px] border-eq-border2 uppercase cursor-pointer hover:bg-black/5 hover:border-black/40 transition-all duration-150 whitespace-nowrap">
+              Mission Briefing
+            </button>
           </div>
         </div>
 
-        <div className="eq-panel">
-          <div className="eq-panel-head">World Economic Snapshot</div>
+        {/* Data Panel */}
+        <div className="border border-eq-border2 bg-eq-bg2">
+          <div className="px-[18px] py-[16px] border-b border-eq-border2 text-[8px] font-medium tracking-[0.2em] text-eq-accent uppercase">
+            World Economic Snapshot
+          </div>
           {DATA_ROWS.map(({ label, val, delta, warn }) => (
-            <div className="eq-data-row" key={label}>
-              <span className="eq-data-label">{label}</span>
-              <div>
-                <div className={`eq-data-val${warn ? ' warn' : ''}`}>{val}</div>
-                <div className={`eq-data-delta${warn ? ' warn' : ''}`}>{delta}</div>
+            <div key={label} className="flex justify-between items-baseline px-[18px] py-[11px] border-b border-eq-border gap-[8px] last:border-b-0">
+              <span className="text-[11px] text-eq-muted">{label}</span>
+              <div className="text-right">
+                <div className={`text-[12px] font-medium ${warn ? 'text-eq-accent' : ''}`}>
+                  {val}
+                </div>
+                <div className={`text-[9px] mt-[1px] ${warn ? 'text-eq-accent' : 'text-eq-dim'}`}>
+                  {delta}
+                </div>
               </div>
             </div>
           ))}
-          <div className="eq-note-box">
-            <div className="eq-note-title">Data from World Bank / IMF</div>
-            <div className="eq-note-body">Figures reflect 2024 estimates. Your simulation begins from this baseline.</div>
+          <div className="px-[18px] py-[13px] bg-eq-accent/5 border-t border-eq-accent/20">
+            <div className="text-[8px] font-medium tracking-[0.14em] text-eq-accent uppercase mb-[4px]">
+              Data from World Bank / IMF
+            </div>
+            <div className="text-[11px] text-eq-muted leading-[1.65]">
+              Figures reflect 2024 estimates. Your simulation begins from this baseline.
+            </div>
           </div>
         </div>
       </section>
 
       {/* FEATURES */}
-      <section id="features" className="eq-features">
-        <div className="eq-section-header">
-          <h2 className="eq-section-title">Simulation Modules</h2>
-          <span className="eq-section-meta">Three core systems</span>
+      <section className="px-[44px] py-[64px] border-b border-eq-border2">
+        <div className="flex justify-between items-baseline border-b border-eq-border2 pb-[18px] mb-[44px] flex-wrap gap-[8px]">
+          <h2 className="font-display text-[36px] tracking-[0.05em] text-eq-ink">
+            Simulation Modules
+          </h2>
+          <span className="text-[10px] text-eq-muted tracking-[0.09em] uppercase">
+            Three core systems
+          </span>
         </div>
-        <div className="eq-feature-grid">
+
+        <div className="grid grid-cols-3 gap-px bg-eq-border">
           {FEATURES.map(({ num, title, sub, body, tag }) => (
-            <div className="eq-feature-card" key={num}>
-              <div className="eq-feature-num">{num}</div>
-              <div className="eq-feature-title">{title}</div>
-              <div className="eq-feature-sub">{sub}</div>
-              <p className="eq-feature-body">{body}</p>
-              <div className="eq-feature-tag">{tag}</div>
+            <div 
+              key={num} 
+              className="bg-eq-bg px-[26px] py-[30px] hover:bg-eq-bg2 transition-colors duration-180"
+            >
+              <div className="text-[9px] tracking-[0.15em] text-eq-accent mb-[11px] font-medium">
+                {num}
+              </div>
+              <div className="font-display text-[27px] tracking-[0.04em] text-eq-ink mb-[3px]">
+                {title}
+              </div>
+              <div className="text-[10px] text-eq-muted tracking-[0.06em] mb-[13px] uppercase">
+                {sub}
+              </div>
+              <p className="text-[13px] text-eq-muted leading-[1.8] mb-[18px]">
+                {body}
+              </p>
+              <div className="text-[8px] text-eq-accent tracking-[0.1em] uppercase pt-[13px] border-t border-eq-border">
+                {tag}
+              </div>
             </div>
           ))}
         </div>
       </section>
 
       {/* QUOTE + CHECKLIST */}
-      <section className="eq-quote-section">
+      <section className="grid grid-cols-2 gap-[56px] items-center px-[44px] py-[64px] border-b border-eq-border2 bg-eq-bg2">
         <div>
-          <div className="eq-big-quote">"</div>
-          <blockquote className="eq-blockquote">
+          <div className="font-display text-[72px] text-eq-accent leading-[0.8] opacity-22 mb-[6px]">
+            "
+          </div>
+          <blockquote className="font-display text-[22px] leading-[1.25] tracking-[0.025em] text-eq-ink mb-[22px]">
             Not a game — a high-fidelity governance laboratory for the real world.
           </blockquote>
-          <div className="eq-attribution">
-            <div className="eq-attr-line" />
+          <div className="flex items-center gap-[12px]">
+            <div className="w-px h-[34px] bg-eq-accent shrink-0" />
           </div>
         </div>
-        <div className="eq-checklist">
+
+        <div className="flex flex-col gap-[14px]">
           {CHECKS.map(({ title, desc }) => (
-            <div className="eq-check-item" key={title}>
-              <div className="eq-check-dot" />
+            <div key={title} className="flex items-start gap-[12px] px-[16px] py-[14px] border border-eq-border2 bg-eq-bg">
+              <div className="w-[6px] h-[6px] bg-eq-accent rounded-full shrink-0 mt-[5px]" />
               <div>
-                <div className="eq-check-title">{title}</div>
-                <div className="eq-check-desc">{desc}</div>
+                <div className="text-[12px] font-medium text-eq-ink mb-[3px]">
+                  {title}
+                </div>
+                <div className="text-[11px] text-eq-muted leading-[1.6]">
+                  {desc}
+                </div>
               </div>
             </div>
           ))}
@@ -533,30 +274,70 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
       </section>
 
       {/* CTA */}
-      <section className="eq-cta-band">
+      <section className="px-[44px] py-[64px] flex justify-between items-center gap-[40px] flex-wrap">
         <div>
-          <div className="eq-cta-eyebrow">Your mandate begins now</div>
-          <h2 className="eq-cta-headline">READY TO<br />TAKE CONTROL?</h2>
+          <div className="text-[9px] text-eq-muted tracking-[0.16em] uppercase mb-[10px]">
+            Your mandate begins now
+          </div>
+          <h2 className="font-display text-[54px] leading-[0.9] tracking-[0.02em] text-eq-ink">
+            READY TO<br />
+            TAKE CONTROL?
+          </h2>
         </div>
-        <div className="eq-cta-aside">
-          <button className="eq-btn-primary lg" onClick={onStart}>▶ Assume Command</button>
-          <div className="eq-cta-note">Free to play · No account needed</div>
+        <div className="flex flex-col items-center gap-[9px]">
+          <button 
+            onClick={onStart}
+            className="bg-eq-accent text-white px-[40px] py-[17px] text-[14px] font-medium tracking-[0.09em] uppercase cursor-pointer hover:bg-eq-accent2 transition-colors duration-150 whitespace-nowrap"
+          >
+            ▶ Assume Command
+          </button>
+          <div className="text-[10px] text-eq-muted tracking-[0.08em] uppercase">
+            Free to play · No account needed
+          </div>
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer className="eq-footer">
-        <div className="eq-footer-left">
-          <span className="eq-footer-wm">ECONOQUEST</span>
-          <span className="eq-footer-copy">© 2025</span>
+      <footer className="border-t-2 border-eq-border2 px-[44px] py-[22px] flex justify-between items-center flex-wrap gap-[16px] bg-eq-bg2">
+        <div className="flex items-center gap-[12px]">
+          <span className="font-display text-[15px] tracking-[0.07em] text-eq-ink">
+            ECONOQUEST
+          </span>
+          <span className="text-[9px] text-eq-muted tracking-[0.08em]">
+            © 2025
+          </span>
         </div>
-        <div className="eq-footer-links">
+        <div className="flex gap-[20px] flex-wrap">
           {['Simulation', 'Leaderboard', 'About', 'Terms'].map(item => (
-            <a href="#" className="eq-nav-link" key={item}>{item}</a>
+            <a 
+              key={item}
+              href="#" 
+              className="text-[11px] tracking-[0.08em] text-eq-muted uppercase hover:text-eq-accent transition-colors duration-150"
+            >
+              {item}
+            </a>
           ))}
         </div>
       </footer>
 
+      <style>{`
+        @keyframes eq-ticker {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        @keyframes eq-blink {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0; }
+        }
+        @keyframes eq-fade-up {
+          from { opacity: 0; transform: translateY(14px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        
+        .font-display {
+          font-family: 'Bebas Neue', sans-serif;
+        }
+      `}</style>
     </div>
   );
 };
