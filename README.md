@@ -35,7 +35,7 @@ EconoQuest combines interactive policy controls, a live economic dashboard, scen
 
 Check out the live deployment:
 
-👉 **[https://econo-quest-vert.vercel.app/](https://econo-quest-vert.vercel.app/)**
+👉 **[https://econoquest.wahb.space/](https://econoquest.wahb.space)**
 
 ## 📋 Getting Started
 
