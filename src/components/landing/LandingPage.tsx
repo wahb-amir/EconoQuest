@@ -48,7 +48,6 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Inject critical CSS immediately to prevent FOUC
     const styleTag = document.createElement('style');
     styleTag.textContent = `
       @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap');
@@ -80,12 +79,11 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
-    return null; // Prevent flash by not rendering until after styles are injected
-  }
+  if (!mounted) return null;
 
   return (
     <div className="min-h-screen bg-eq-bg text-eq-ink font-mono leading-relaxed">
+
       {/* TICKER */}
       <div className="h-[30px] bg-eq-accent text-white overflow-hidden flex items-center">
         <div className="px-[14px] text-[9px] leading-[30px] font-medium tracking-[0.18em] uppercase whitespace-nowrap border-r border-white/25 shrink-0">
@@ -104,19 +102,17 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
       </div>
 
       {/* NAV */}
-      <nav className="border-b-2 border-eq-border2 px-[44px] h-[60px] flex items-center justify-between bg-eq-bg">
-        <div className="flex items-center gap-[10px]">
-          <div 
-            className="w-[7px] h-[7px] bg-eq-accent rounded-full shrink-0 animate-blink"
-          />
-          <span className="font-display text-[21px] tracking-[0.05em] text-eq-ink">
+      <nav className="border-b-2 border-eq-border2 px-4 sm:px-[44px] h-[60px] flex items-center justify-between bg-eq-bg gap-3">
+        <div className="flex items-center gap-[10px] min-w-0">
+          <div className="w-[7px] h-[7px] bg-eq-accent rounded-full shrink-0 animate-blink" />
+          <span className="font-display text-[18px] sm:text-[21px] tracking-[0.05em] text-eq-ink whitespace-nowrap">
             ECONOQUEST
           </span>
-          <span className="text-[8px] tracking-[0.12em] text-eq-muted border border-eq-border2 px-[7px] py-[2px] uppercase">
+          <span className="text-[8px] tracking-[0.12em] text-eq-muted border border-eq-border2 px-[7px] py-[2px] uppercase shrink-0">
             Beta
           </span>
         </div>
-        <div className="flex items-center gap-[22px]">
+        <div className="flex items-center gap-3 sm:gap-[22px] shrink-0">
           <div className="hidden md:flex items-center gap-[22px]">
             <a href="#features" className="text-[11px] tracking-[0.08em] text-eq-muted uppercase hover:text-eq-accent transition-colors duration-150">
               Features
@@ -125,21 +121,19 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
               Rankings
             </a>
           </div>
-          <button 
+          <button
             onClick={onStart}
-            className="bg-eq-accent text-white px-[22px] py-[10px] text-[11px] font-medium tracking-[0.09em] uppercase cursor-pointer hover:bg-eq-accent2 transition-colors duration-150 whitespace-nowrap"
+            className="bg-eq-accent text-white px-3 sm:px-[22px] py-[10px] text-[10px] sm:text-[11px] font-medium tracking-[0.09em] uppercase cursor-pointer hover:bg-eq-accent2 transition-colors duration-150 whitespace-nowrap"
           >
-            Enter Platform →
+            Enter →
           </button>
         </div>
       </nav>
 
       {/* HERO */}
-      <section 
-        className="grid grid-cols-[1fr_320px] gap-[52px] items-start px-[44px] py-[60px] pb-[72px] border-b border-eq-border2 animate-fade-up"
-      >
+      <section className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 lg:gap-[52px] items-start px-4 sm:px-[44px] py-10 sm:py-[60px] pb-12 sm:pb-[72px] border-b border-eq-border2 animate-fade-up">
         <div>
-          <div className="flex items-center gap-[12px] flex-wrap mb-[24px]">
+          <div className="flex items-center gap-[12px] flex-wrap mb-6 sm:mb-[24px]">
             <span className="text-[8px] font-medium tracking-[0.16em] text-eq-accent border border-eq-accent px-[9px] py-[3px] uppercase">
               ◉ Simulation Active
             </span>
@@ -148,15 +142,15 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
             </span>
           </div>
 
-          <h1 className="font-display text-[clamp(64px,10vw,118px)] leading-[0.88] tracking-[0.025em] text-eq-ink mb-[30px]">
+          <h1 className="font-display text-[clamp(52px,14vw,118px)] leading-[0.88] tracking-[0.025em] text-eq-ink mb-6 sm:mb-[30px]">
             THE WORLD<br />
             ECONOMY<br />
             IS <span className="text-eq-accent">YOURS</span>
             <span className="text-eq-accent" style={{ animation: 'eq-blink 1s step-end infinite' }}>█</span>
           </h1>
 
-          <div className="border-l-[3px] border-eq-accent pl-[18px] mb-[30px] max-w-[520px]">
-            <p className="text-[15px] leading-[1.85] text-eq-muted">
+          <div className="border-l-[3px] border-eq-accent pl-[18px] mb-6 sm:mb-[30px] max-w-[520px]">
+            <p className="text-[14px] sm:text-[15px] leading-[1.85] text-eq-muted">
               Inflation. Debt spirals. Trade wars. Supply shocks.<br />
               You didn't cause this mess — but you've just been handed the keys.<br />
               <strong className="text-eq-ink font-medium">Build an empire. Crash the market. Find out what actually works.</strong>
@@ -164,27 +158,27 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
           </div>
 
           <div className="flex gap-[10px] flex-wrap">
-            <button 
+            <button
               onClick={onStart}
-              className="bg-eq-accent text-white px-[40px] py-[17px] text-[14px] font-medium tracking-[0.09em] uppercase cursor-pointer hover:bg-eq-accent2 transition-colors duration-150 whitespace-nowrap"
+              className="bg-eq-accent text-white px-6 sm:px-[40px] py-4 sm:py-[17px] text-[13px] sm:text-[14px] font-medium tracking-[0.09em] uppercase cursor-pointer hover:bg-eq-accent2 transition-colors duration-150 whitespace-nowrap"
             >
               ▶ Assume Command
             </button>
-            <button className="bg-transparent text-eq-ink px-[40px] py-[17px] text-[14px] font-medium tracking-[0.09em] border-[1.5px] border-eq-border2 uppercase cursor-pointer hover:bg-black/5 hover:border-black/40 transition-all duration-150 whitespace-nowrap">
+            <button className="bg-transparent text-eq-ink px-6 sm:px-[40px] py-4 sm:py-[17px] text-[13px] sm:text-[14px] font-medium tracking-[0.09em] border-[1.5px] border-eq-border2 uppercase cursor-pointer hover:bg-black/5 hover:border-black/40 transition-all duration-150 whitespace-nowrap">
               Mission Briefing
             </button>
           </div>
         </div>
 
-        {/* Data Panel */}
-        <div className="border border-eq-border2 bg-eq-bg2">
+        {/* Data Panel — full width on mobile, sidebar on lg */}
+        <div className="border border-eq-border2 bg-eq-bg2 w-full">
           <div className="px-[18px] py-[16px] border-b border-eq-border2 text-[8px] font-medium tracking-[0.2em] text-eq-accent uppercase">
             World Economic Snapshot
           </div>
           {DATA_ROWS.map(({ label, val, delta, warn }) => (
             <div key={label} className="flex justify-between items-baseline px-[18px] py-[11px] border-b border-eq-border gap-[8px] last:border-b-0">
               <span className="text-[11px] text-eq-muted">{label}</span>
-              <div className="text-right">
+              <div className="text-right shrink-0">
                 <div className={`text-[12px] font-medium ${warn ? 'text-eq-accent' : ''}`}>
                   {val}
                 </div>
@@ -206,9 +200,9 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
       </section>
 
       {/* FEATURES */}
-      <section className="px-[44px] py-[64px] border-b border-eq-border2">
-        <div className="flex justify-between items-baseline border-b border-eq-border2 pb-[18px] mb-[44px] flex-wrap gap-[8px]">
-          <h2 className="font-display text-[36px] tracking-[0.05em] text-eq-ink">
+      <section id="features" className="px-4 sm:px-[44px] py-12 sm:py-[64px] border-b border-eq-border2">
+        <div className="flex justify-between items-baseline border-b border-eq-border2 pb-[18px] mb-8 sm:mb-[44px] flex-wrap gap-[8px]">
+          <h2 className="font-display text-[28px] sm:text-[36px] tracking-[0.05em] text-eq-ink">
             Simulation Modules
           </h2>
           <span className="text-[10px] text-eq-muted tracking-[0.09em] uppercase">
@@ -216,16 +210,17 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
           </span>
         </div>
 
-        <div className="grid grid-cols-3 gap-px bg-eq-border">
+        {/* 1 col mobile, 3 col desktop */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-eq-border">
           {FEATURES.map(({ num, title, sub, body, tag }) => (
-            <div 
-              key={num} 
-              className="bg-eq-bg px-[26px] py-[30px] hover:bg-eq-bg2 transition-colors duration-180"
+            <div
+              key={num}
+              className="bg-eq-bg px-6 sm:px-[26px] py-7 sm:py-[30px] hover:bg-eq-bg2 transition-colors duration-180"
             >
               <div className="text-[9px] tracking-[0.15em] text-eq-accent mb-[11px] font-medium">
                 {num}
               </div>
-              <div className="font-display text-[27px] tracking-[0.04em] text-eq-ink mb-[3px]">
+              <div className="font-display text-[24px] sm:text-[27px] tracking-[0.04em] text-eq-ink mb-[3px]">
                 {title}
               </div>
               <div className="text-[10px] text-eq-muted tracking-[0.06em] mb-[13px] uppercase">
@@ -243,12 +238,12 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
       </section>
 
       {/* QUOTE + CHECKLIST */}
-      <section className="grid grid-cols-2 gap-[56px] items-center px-[44px] py-[64px] border-b border-eq-border2 bg-eq-bg2">
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-[56px] items-center px-4 sm:px-[44px] py-12 sm:py-[64px] border-b border-eq-border2 bg-eq-bg2">
         <div>
           <div className="font-display text-[72px] text-eq-accent leading-[0.8] opacity-22 mb-[6px]">
             "
           </div>
-          <blockquote className="font-display text-[22px] leading-[1.25] tracking-[0.025em] text-eq-ink mb-[22px]">
+          <blockquote className="font-display text-[20px] sm:text-[22px] leading-[1.25] tracking-[0.025em] text-eq-ink mb-[22px]">
             Not a game — a high-fidelity governance laboratory for the real world.
           </blockquote>
           <div className="flex items-center gap-[12px]">
@@ -274,20 +269,20 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
       </section>
 
       {/* CTA */}
-      <section className="px-[44px] py-[64px] flex justify-between items-center gap-[40px] flex-wrap">
+      <section className="px-4 sm:px-[44px] py-12 sm:py-[64px] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-8 sm:gap-[40px]">
         <div>
           <div className="text-[9px] text-eq-muted tracking-[0.16em] uppercase mb-[10px]">
             Your mandate begins now
           </div>
-          <h2 className="font-display text-[54px] leading-[0.9] tracking-[0.02em] text-eq-ink">
+          <h2 className="font-display text-[40px] sm:text-[54px] leading-[0.9] tracking-[0.02em] text-eq-ink">
             READY TO<br />
             TAKE CONTROL?
           </h2>
         </div>
-        <div className="flex flex-col items-center gap-[9px]">
-          <button 
+        <div className="flex flex-col items-start sm:items-center gap-[9px] shrink-0">
+          <button
             onClick={onStart}
-            className="bg-eq-accent text-white px-[40px] py-[17px] text-[14px] font-medium tracking-[0.09em] uppercase cursor-pointer hover:bg-eq-accent2 transition-colors duration-150 whitespace-nowrap"
+            className="bg-eq-accent text-white px-6 sm:px-[40px] py-4 sm:py-[17px] text-[13px] sm:text-[14px] font-medium tracking-[0.09em] uppercase cursor-pointer hover:bg-eq-accent2 transition-colors duration-150 whitespace-nowrap"
           >
             ▶ Assume Command
           </button>
@@ -298,7 +293,7 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
       </section>
 
       {/* FOOTER */}
-      <footer className="border-t-2 border-eq-border2 px-[44px] py-[22px] flex justify-between items-center flex-wrap gap-[16px] bg-eq-bg2">
+      <footer className="border-t-2 border-eq-border2 px-4 sm:px-[44px] py-[22px] flex justify-between items-center flex-wrap gap-[16px] bg-eq-bg2">
         <div className="flex items-center gap-[12px]">
           <span className="font-display text-[15px] tracking-[0.07em] text-eq-ink">
             ECONOQUEST
@@ -307,11 +302,11 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
             © 2025
           </span>
         </div>
-        <div className="flex gap-[20px] flex-wrap">
+        <div className="flex gap-[16px] sm:gap-[20px] flex-wrap">
           {['Simulation', 'Leaderboard', 'About', 'Terms'].map(item => (
-            <a 
+            <a
               key={item}
-              href="#" 
+              href="#"
               className="text-[11px] tracking-[0.08em] text-eq-muted uppercase hover:text-eq-accent transition-colors duration-150"
             >
               {item}
